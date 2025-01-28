@@ -1,9 +1,12 @@
-#include "../include/display.h"
+
+#include "login_form.h"
+#include <ncurses.h>
 #include <stdlib.h>
+#include <string.h>
 
 int main(void)
 {
-    display("Hello, World");
+    start_login_form();
 
-    return EXIT_SUCCESS;
+    return 0;
 }

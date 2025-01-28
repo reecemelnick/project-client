@@ -1,0 +1,156 @@
+
+#include "login_form.h"
+#include <ncurses.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define INPUT_BUFFER_SIZE 50
+#define HEIGHT 10
+#define WIDTH 40
+
+void start_login_form(void)
+{
+    char    username[INPUT_BUFFER_SIZE];
+    char    password[INPUT_BUFFER_SIZE];
+    int     height;
+    int     width;
+    int     starty;
+    int     startx;
+    WINDOW *win;
+    size_t  i;
+    size_t  j;
+    int     inputting_info;
+
+    inputting_info = 1;
+
+    // Initialize ncurses
+    initscr();
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+
+    height = HEIGHT;
+    width  = WIDTH;
+    starty = (LINES - height) / 2;
+    startx = (COLS - width) / 2;
+
+    // Create a new window for the GUI
+    win = newwin(height, width, starty, startx);
+    draw_box(win);
+    mvwprintw(win, 1, 2, "Login Form");
+
+    // Input fields for username and password
+    mvwprintw(win, 3, 2, "Username: ");    // NOLINT
+    mvwprintw(win, 5, 2, "Password: ");    // NOLINT
+    wrefresh(win);
+
+    wmove(win, 3, 12);    // NOLINT
+
+    // used to determine how long username and password are
+    i = 0;
+    j = 0;
+
+    while(inputting_info)
+    {
+        int ch;
+
+        while((ch = wgetch(win)))
+        {
+            // make sure character is alpha numeric and within limit of username
+            if(isalnum(ch) && i < sizeof(username) - 1)
+            {
+                username[i++] = (char)ch;
+                waddch(win, (chtype)ch);    // NOLINT
+                wrefresh(win);
+            }
+            // be able to backspace
+            else if(ch == 127 || ch == KEY_BACKSPACE)    // NOLINT
+            {
+                if(i > 0)
+                {
+                    i--;
+                    wmove(win, 3, 12 + (int)i);    // NOLINT
+                    waddch(win, ' ');
+                    wmove(win, 3, 12 + (int)i);    // NOLINT
+                    wrefresh(win);
+                }
+            }
+            // temp solution press \ to switch input field
+            else if(ch == 92)    // NOLINT
+            {
+                wmove(win, 5, 12 + (int)j);    // NOLINT
+                break;
+            }
+            else if(ch == '\n')
+            {
+                if(j > 0)
+                {
+                    inputting_info = 0;
+                }
+                break;
+            }
+        }
+
+        username[i] = '\0';    // Null-terminate the username string
+
+        if(j == 0)
+        {
+            wmove(win, 5, 12);    // NOLINT
+        }
+        while((ch = wgetch(win)))
+        {    // read password character-by-character
+            if(isalnum(ch) && j < sizeof(password) - 1)
+            {
+                password[j++] = (char)ch;
+                waddch(win, '*');
+                wrefresh(win);
+            }
+            else if(ch == 127 || ch == KEY_BACKSPACE)    // NOLINT
+            {
+                if(j > 0)
+                {
+                    j--;
+                    wmove(win, 5, 12 + (int)j);    // NOLINT
+                    waddch(win, ' ');
+                    wmove(win, 5, 12 + (int)j);    // NOLINT
+                    wrefresh(win);
+                }
+            }
+            // temp solution press \ to switch input field
+            else if(ch == 92)    // NOLINT
+            {
+                wmove(win, 3, 12 + (int)i);    // NOLINT
+                break;
+            }
+            else if(ch == '\n')
+            {
+                inputting_info = 0;
+                break;
+            }
+        }
+
+        password[j] = '\0';
+    }
+
+    // clear the window and display the entered details
+    werase(win);
+    draw_box(win);
+    mvwprintw(win, 2, 2, "Login Details:");
+    mvwprintw(win, 4, 2, "Username: %s", username);    // NOLINT
+    mvwprintw(win, 6, 2, "Password: %s", password);    // NOLINT
+    wrefresh(win);
+
+    // wait for the user to press a key before exiting
+    mvwprintw(win, 8, 2, "Press any key to exit...");    // NOLINT
+    wrefresh(win);
+    wgetch(win);
+
+    delwin(win);
+    endwin();
+}
+
+void draw_box(WINDOW *win)
+{
+    box(win, 0, 0);
+    wrefresh(win);
+}
