@@ -1,5 +1,5 @@
 
-#include "login_form.h"
+#include "signup_form.h"
 #include "gui.h"
 #include <ncurses.h>
 #include <stdlib.h>
@@ -9,7 +9,7 @@
 #define HEIGHT 10
 #define WIDTH 40
 
-void start_login_form(void)
+void start_signup_form(void)
 {
     char    username[INPUT_BUFFER_SIZE];
     char    password[INPUT_BUFFER_SIZE];
@@ -38,7 +38,7 @@ void start_login_form(void)
     // Create a new window for the GUI
     win = newwin(height, width, starty, startx);
     draw_box(win);
-    mvwprintw(win, 1, 2, "Login Form");
+    mvwprintw(win, 1, 2, "Create Account");
 
     // Input fields for username and password
     mvwprintw(win, 3, 2, "Username: ");    // NOLINT
@@ -136,7 +136,7 @@ void start_login_form(void)
     // clear the window and display the entered details
     werase(win);
     draw_box(win);
-    mvwprintw(win, 2, 2, "Login Details:");
+    mvwprintw(win, 2, 2, "Account Details:");
     mvwprintw(win, 4, 2, "Username: %s", username);    // NOLINT
     mvwprintw(win, 6, 2, "Password: %s", password);    // NOLINT
     wrefresh(win);
