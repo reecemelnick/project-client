@@ -28,7 +28,7 @@ void start_signup_form(void)
     initscr();
     cbreak();
     noecho();
-    keypad(stdscr, TRUE);
+    curs_set(1);
 
     height = HEIGHT;
     width  = WIDTH;
@@ -44,6 +44,7 @@ void start_signup_form(void)
     mvwprintw(win, 3, 2, "Username: ");    // NOLINT
     mvwprintw(win, 5, 2, "Password: ");    // NOLINT
     wrefresh(win);
+    keypad(win, TRUE);
 
     wmove(win, 3, 12);    // NOLINT
 
@@ -77,7 +78,7 @@ void start_signup_form(void)
                 }
             }
             // temp solution press \ to switch input field
-            else if(ch == 92)    // NOLINT
+            else if(ch == KEY_DOWN)    // NOLINT
             {
                 wmove(win, 5, 12 + (int)j);    // NOLINT
                 break;
@@ -93,6 +94,11 @@ void start_signup_form(void)
         }
 
         username[i] = '\0';    // Null-terminate the username string
+
+        if(inputting_info == 0)
+        {
+            break;
+        }
 
         if(j == 0)
         {
@@ -118,7 +124,7 @@ void start_signup_form(void)
                 }
             }
             // temp solution press \ to switch input field
-            else if(ch == 92)    // NOLINT
+            else if(ch == KEY_UP)    // NOLINT
             {
                 wmove(win, 3, 12 + (int)i);    // NOLINT
                 break;
