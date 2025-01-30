@@ -10,7 +10,7 @@
 #define HEIGHT 10
 #define WIDTH 40
 
-void start_signup_form(void)
+void start_signup_form(struct ACC_Create *acc_create, int *err)
 {
     char    username[INPUT_BUFFER_SIZE];
     char    password[INPUT_BUFFER_SIZE];
@@ -155,4 +155,7 @@ void start_signup_form(void)
 
     delwin(win);
     endwin();
+
+    acc_create->username = string_to_bytes(username, err);
+    acc_create->password = string_to_bytes(password, err);
 }
