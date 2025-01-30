@@ -1,6 +1,12 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+
 struct Message {
     uint8_t packet_type;
     uint8_t version;
@@ -14,5 +20,16 @@ struct ACC_Create {
     uint8_t *username;
     uint8_t *password;
 };
+
+typedef enum {
+    BOOLEAN = 1,
+    INTEGER = 2,
+    NULL_VALUE = 5,
+    ENUMERATED = 10,
+    UTF8STRING = 12,
+    SEQUENCE = 16,
+    PRINTABLESTRING = 19,
+    UTCTIME = 23
+} Tag;
 
 #endif    // MESSAGES_H
