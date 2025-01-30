@@ -1,5 +1,6 @@
 
 #include "login_form.h"
+#include "network_utils.h"
 #include "signup_form.h"
 #include "start_menu.h"
 #include <ncurses.h>
