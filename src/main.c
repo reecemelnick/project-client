@@ -7,9 +7,40 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    struct socket_network net_socket;
+
     int res;
+    int err = 0;
+
+    handle_arguments(argc, argv, &net_socket, &err);
+    if(err != 0)
+    {
+        goto done;
+    }
+
+    // socket initialization
+    socket_create(&net_socket, &err);
+    if(err != 0)
+    {
+        goto done;
+    }
+
+    setup_network_address(&net_socket, &err);
+    if(err != 0)
+    {
+        goto cleanup;
+    }
+    // end socket initialization
+
+    // socket connect
+    // socket_connect(net_socket.sockfd, (struct sockaddr *)(&(net_socket.addr)), net_socket.addr_len, &err);
+    // if(err != 0)
+    // {
+    //     goto cleanup;
+    // }
+    // end socket connect
 
     res = display_menu();
     if(res == 1)
@@ -21,5 +52,10 @@ int main(void)
         start_signup_form();
     }
 
+    printf("client ran successfully");
+cleanup:
+    socket_close(net_socket.sockfd);
+
+done:
     return 0;
 }
