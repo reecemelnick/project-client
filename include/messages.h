@@ -8,16 +8,24 @@
 #include <errno.h>
 
 struct Message {
+    // cppcheck-suppress unusedStructMember
     uint8_t packet_type;
+    // cppcheck-suppress unusedStructMember
     uint8_t version;
+    // cppcheck-suppress unusedStructMember
     uint16_t sender_id;
+    // cppcheck-suppress unusedStructMember
     uint16_t payload_len;
 };
 
 struct ACC_Create {
+    // cppcheck-suppress unusedStructMember
     struct Message *message;
+    // cppcheck-suppress unusedStructMember
     uint8_t seq_len[2]; // First byte is BER 30, second is seq. length
+    // cppcheck-suppress unusedStructMember
     uint8_t *username;
+    // cppcheck-suppress unusedStructMember
     uint8_t *password;
 };
 

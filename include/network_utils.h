@@ -15,9 +15,13 @@
 
 struct socket_network
 {
+    // cppcheck-suppress unusedStructMember
     char                   *address;
+    // cppcheck-suppress unusedStructMember
     int                     sockfd;
+    // cppcheck-suppress unusedStructMember
     struct sockaddr_storage addr;
+    // cppcheck-suppress unusedStructMember
     socklen_t               addr_len;
 };
 
