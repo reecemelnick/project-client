@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,7 +20,7 @@ void construct_message(struct Message *header, uint8_t type, uint8_t version, ui
     header->payload_len = length;
 }
 
-void serialize_message(const struct Message *header, uint8_t username, uint8_t password)
+void serialize_and_send(const int serverfd, const struct Message *header, uint8_t username, uint8_t password)
 {
     size_t packet_size;
 
@@ -56,7 +57,18 @@ void serialize_message(const struct Message *header, uint8_t username, uint8_t p
     memcpy(buffer + HEADER_SIZE, payload_buffer, sizeof(header->payload_len));
 
     // send the buffer
+    send_packet(serverfd, buffer, packet_size);
 
     free(payload_buffer);
     free(buffer);
+}
+
+void send_packet(const int serverfd, const uint8_t *buffer, const size_t size) 
+{
+    int bytes;
+
+    if (write(serverfd, buffer, size) < 0)
+    {
+        perror("Write");
+    }
 }
