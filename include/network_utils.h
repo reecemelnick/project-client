@@ -13,7 +13,7 @@
 
 #define PORT 8080
 
-struct socket_network
+struct socket_network 
 {
     char                   *address;
     int                     sockfd;
