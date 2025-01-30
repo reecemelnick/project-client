@@ -16,13 +16,13 @@
 struct socket_network
 {
     // cppcheck-suppress unusedStructMember
-    char                   *address;
+    char *address;
     // cppcheck-suppress unusedStructMember
-    int                     sockfd;
+    int sockfd;
     // cppcheck-suppress unusedStructMember
     struct sockaddr_storage addr;
     // cppcheck-suppress unusedStructMember
-    socklen_t               addr_len;
+    socklen_t addr_len;
 };
 
 void setup_signal(void (*handler)(int), int *err);
