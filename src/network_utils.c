@@ -34,7 +34,7 @@ void handle_arguments(int argc, char *argv[], struct socket_network *net_socket,
 
 void socket_create(struct socket_network *net_socket, int *err)
 {
-    net_socket->sockfd = socket(AF_INET, SOCK_STREAM, 0);    // NOLINT
+    net_socket->sockfd = socket(AF_INET, SOCK_STREAM, 0); // NOLINT
     if(net_socket->sockfd == -1)
     {
         *err = errno;
