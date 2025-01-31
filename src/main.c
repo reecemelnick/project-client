@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     if(acc_create.username != NULL)
     {
         printf("String: ");
-        for(size_t i = 0; i < sizeof(acc_create.username) + 2; i++)
+        for(size_t i = 0; acc_create.username[i] != 0; i++)
         {
             printf("%02X ", acc_create.username[i]);
         }
@@ -73,14 +73,14 @@ int main(int argc, char *argv[])
     if(acc_create.password != NULL)
     {
         printf("String: ");
-        for(size_t i = 0; i < sizeof(acc_create.password) + 2; i++)
+        for(size_t i = 0; acc_create.password[i] != 0; i++)
         {
             printf("%02X ", acc_create.password[i]);
         }
         printf("\n");
     }
 
-    printf("client ran successfully");
+    printf("client ran successfully\n");
 cleanup:
     socket_close(net_socket.sockfd);
     free(acc_create.username);
