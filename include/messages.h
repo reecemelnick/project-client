@@ -22,7 +22,7 @@ struct ACC_Create {
     // cppcheck-suppress unusedStructMember
     struct Message *message;
     // cppcheck-suppress unusedStructMember
-    uint8_t seq_len[2]; // First byte is BER 30, second is seq. length
+    uint8_t *seq_len; // First byte is BER 30, second is seq. length
     // cppcheck-suppress unusedStructMember
     uint8_t *username;
     // cppcheck-suppress unusedStructMember
@@ -35,7 +35,7 @@ typedef enum {
     NULL_VALUE = 5,
     ENUMERATED = 10,
     UTF8STRING = 12,
-    SEQUENCE = 16,
+    SEQUENCE = 48, // Noted in protocol document that they ALWAYS encode it as 48 (30 in hex).
     PRINTABLESTRING = 19,
     UTCTIME = 23
 } Tag;
