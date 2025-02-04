@@ -38,19 +38,51 @@ uint8_t *string_to_bytes(const char *str, int *err)
 
 void convert_username_password(struct ACC_Create *acc_create, const char *username, const char *password, int *err)
 {
+    // Initializes sequence length
+    acc_create->seq_len = (uint8_t *)malloc(2 * sizeof(uint8_t));
+
+    acc_create->seq_len[0] = (uint8_t)SEQUENCE;
+    acc_create->seq_len[1] = (uint8_t)((strlen(username) + 2) + (strlen(password) + 2));
+
+    // printf("Seq_len (hex): ");
+    // for(size_t zz = 0; zz < 2; zz++)
+    // {
+    //     printf("%02X ", acc_create->seq_len[zz]);    // %02X for hex with leading zero
+    // }
+    // printf("\n");
+
     // Converts username and password to byte stream and stores it accordingly to acc_create
     acc_create->username = string_to_bytes(username, err);
-    printf("Username (hex): ");
-    for(size_t xx = 0; xx < strlen(username) + 2; xx++)
-    {
-        printf("%02X ", acc_create->username[xx]);    // %02X for hex with leading zero
-    }
-    printf("\n");
+
+    // printf("Username (hex): ");
+    // for(size_t xx = 0; xx < strlen(username) + 2; xx++)
+    // {
+    //     printf("%02X ", acc_create->username[xx]);    // %02X for hex with leading zero
+    // }
+    // printf("\n");
+
     acc_create->password = string_to_bytes(password, err);
-    printf("Password (hex): ");
-    for(size_t yy = 0; yy < strlen(password) + 2; yy++)
+
+    // printf("Password (hex): ");
+    // for(size_t yy = 0; yy < strlen(password) + 2; yy++)
+    // {
+    //     printf("%02X ", acc_create->password[yy]);    // %02X for hex with leading zero
+    // }
+    // printf("\n");
+}
+
+void free_acc_create(struct ACC_Create *acc_create)
+{
+    if(acc_create->seq_len != NULL)
     {
-        printf("%02X ", acc_create->password[yy]);    // %02X for hex with leading zero
+        free(acc_create->seq_len);
     }
-    printf("\n");
+    if(acc_create->username != NULL)
+    {
+        free(acc_create->username);
+    }
+    if(acc_create->password != NULL)
+    {
+        free(acc_create->password);
+    }
 }
