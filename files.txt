@@ -1,1 +1,1 @@
-main src/main.c src/account.c include/account.h src/login_form.c include/login_form.h src/signup_form.c include/signup_form.h src/gui.c include/gui.h src/start_menu.c include/start_menu.h src/network_utils.c include/network_utils.h src/packet.c include/packet.h ncurses
+main src/main.c src/payload.c include/payload.h src/login_form.c include/login_form.h src/signup_form.c include/signup_form.h src/gui.c include/gui.h src/start_menu.c include/start_menu.h src/network_utils.c include/network_utils.h src/packet.c include/packet.h ncurses

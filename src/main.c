@@ -47,6 +47,8 @@ int main(int argc, char *argv[])
     // }
     // end socket connect
 
+    // We need to query server manager for active server ip first
+
     res = display_menu();
     if(res == 1)
     {
@@ -61,7 +63,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    printf("client ran successfully");
+    printf("client ran successfully\n");
 cleanup:
     socket_close(net_socket.sockfd);
     free_acc_create(&acc_create);
