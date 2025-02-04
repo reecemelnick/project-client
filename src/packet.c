@@ -64,11 +64,11 @@ void serialize_and_send(const int serverfd, const struct Message *header, uint8_
     free(buffer);
 }
 
-void send_packet(const int serverfd, const uint8_t *buffer, const size_t size) 
+void send_packet(const int serverfd, const uint8_t *buffer, const size_t size)
 {
-    int bytes;
+    // int bytes;
 
-    if (write(serverfd, buffer, size) < 0)
+    if(write(serverfd, buffer, size) < 0)
     {
         perror("Write");
     }
