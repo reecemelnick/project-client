@@ -2,5 +2,5 @@
 
 void construct_message(struct Message *header, uint8_t type, uint8_t version, uint16_t id, uint16_t length);
 void serialize_message(const struct Message *header, uint8_t username, uint8_t password);
-void serialize_and_send(int serverfd, const struct Message *header, uint8_t username, uint8_t password);
+void serialize_and_send_message(int serverfd, const struct Message *header, uint8_t username, uint8_t password);
 void send_packet(int serverfd, const uint8_t *buffer, size_t size);
