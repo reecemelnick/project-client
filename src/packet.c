@@ -73,3 +73,33 @@ void send_packet(const int serverfd, const uint8_t *buffer, const size_t size)
         perror("Write");
     }
 }
+
+void construct_connection_message(struct ConnectionMessage *connection_message, const int message_type, const int version)
+{
+    connection_message->message_type = (uint8_t)message_type;
+    connection_message->version      = (uint8_t)version;
+}
+
+void serialize_and_send_connection_message(const int serverfd, const struct ConnectionMessage *connection_message, int *err)
+{
+    uint8_t *buffer;
+    // 1 byte for message_type, 1 byte for version
+    size_t size = 2;
+    buffer      = (uint8_t *)malloc(2 * sizeof(uint8_t));
+    if(buffer == NULL)
+    {
+        *err = errno;
+        perror("malloc");
+        return;
+    }
+
+    // Assign first byte to message type
+    buffer[0] = connection_message->message_type;
+    // Assign second byte to version
+    buffer[1] = connection_message->version;
+
+    // Send the packet
+    send_packet(serverfd, buffer, size);
+
+    free(buffer);
+}
