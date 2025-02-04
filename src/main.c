@@ -8,11 +8,14 @@
 int main(int argc, char *argv[])
 {
     struct socket_network net_socket;
-    struct Message        message;
-    struct ACC_Create     acc_create;
+    // struct ConnectionMessage connection_message;
+    struct Message    message;
+    struct ACC_Create acc_create;
 
     int res;
     int err = 0;
+
+    // connection_message.active_server_ip = NULL;
 
     acc_create.message  = &message;
     acc_create.seq_len  = NULL;
@@ -48,6 +51,8 @@ int main(int argc, char *argv[])
     // end socket connect
 
     // We need to query server manager for active server ip first
+    // construct_connection_message()
+    // serialize_and_send_connection_message()
 
     res = display_menu();
     if(res == 1)
