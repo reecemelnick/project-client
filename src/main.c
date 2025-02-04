@@ -47,6 +47,8 @@ int main(int argc, char *argv[])
     // }
     // end socket connect
 
+    // We need to query server manager for active server ip first
+
     res = display_menu();
     if(res == 1)
     {
@@ -61,6 +63,7 @@ int main(int argc, char *argv[])
         }
     }
 
+<<<<<<< HEAD
     if(acc_create.username != NULL)
     {
         printf("String: ");
@@ -81,6 +84,8 @@ int main(int argc, char *argv[])
         printf("\n");
     }
 
+=======
+>>>>>>> 6eef303 (renamed account files to payload)
     printf("client ran successfully\n");
 cleanup:
     socket_close(net_socket.sockfd);
