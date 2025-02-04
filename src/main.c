@@ -15,6 +15,7 @@ int main(int argc, char *argv[])
     int err = 0;
 
     acc_create.message  = &message;
+    acc_create.seq_len  = NULL;
     acc_create.username = NULL;
     acc_create.password = NULL;
 
@@ -63,8 +64,7 @@ int main(int argc, char *argv[])
     printf("client ran successfully");
 cleanup:
     socket_close(net_socket.sockfd);
-    free(acc_create.username);
-    free(acc_create.password);
+    free_acc_create(&acc_create);
 done:
     return 0;
 }
