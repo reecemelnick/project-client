@@ -156,7 +156,5 @@ void start_signup_form(struct ACC_Create *acc_create, int *err)
     delwin(win);
     endwin();
 
-    // Converts username and password to byte stream and stores it accordingly to acc_create
-    acc_create->username = string_to_bytes(username, err);
-    acc_create->password = string_to_bytes(password, err);
+    convert_username_password(acc_create, username, password, err);
 }
