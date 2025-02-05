@@ -22,7 +22,7 @@ void construct_message(struct Message *header, uint8_t type, uint8_t version, ui
     header->payload_len = length;
 }
 
-void serialize_and_send_message(const int serverfd, const struct Message *header, uint8_t username, uint8_t password)
+void serialize_and_send(const int serverfd, const struct Message *header, uint8_t *username, uint8_t *password)
 {
     size_t packet_size;
 
@@ -40,8 +40,8 @@ void serialize_and_send_message(const int serverfd, const struct Message *header
     payload_buffer = (uint8_t *)malloc(header->payload_len);
 
     // copy payload memory into the payload buffer
-    memcpy(payload_buffer, &username, sizeof(username));
-    memcpy(payload_buffer + sizeof(username), &password, sizeof(password));
+    memcpy(payload_buffer, username, sizeof(*username));
+    memcpy(payload_buffer + sizeof(username), password, sizeof(*password));
 
     // convert the uint16_t attributes to network byte order
     sender_id_n   = htons(header->sender_id);
