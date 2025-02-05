@@ -116,7 +116,7 @@ uint8_t *read_entire_stream(const int serverfd, int *err)
     while((bytes_read = read(serverfd, buffer, BUFFER_SIZE)) > 0)
     {    // TODO: implement sigint handling
 
-        // realloc another bytes_read number of bytes to entire_stream
+        // realloc another bytes_read number of bytes to temp
         uint8_t *temp = (uint8_t *)realloc(entire_stream, total_bytes_read + (size_t)bytes_read);
         if(temp == NULL)    // if realloc failed
         {
