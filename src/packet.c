@@ -128,7 +128,9 @@ uint8_t *read_entire_stream(const int serverfd, int *err)
             }
             return NULL;
         }
+        // if realloc was a success, assign to entire_stream
         entire_stream = temp;
+        // appends data in buffer to entire_stream
         memcpy(entire_stream + total_bytes_read, buffer, (size_t)bytes_read);
         total_bytes_read += (size_t)bytes_read;
     }
