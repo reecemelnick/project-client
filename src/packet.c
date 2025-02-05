@@ -9,6 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#define BUFFER_SIZE 1024
 #define HEADER_SIZE 6
 #define ID_INDEX 2
 #define LENGTH_INDEX 4
@@ -102,4 +103,46 @@ void serialize_and_send_connection_message(const int serverfd, const struct Conn
     send_packet(serverfd, buffer, size);
 
     free(buffer);
+}
+
+uint8_t *read_entire_stream(const int serverfd, int *err)
+{
+    uint8_t  buffer[BUFFER_SIZE];
+    ssize_t  bytes_read       = 0;
+    size_t   total_bytes_read = 0;
+    uint8_t *entire_stream    = NULL;
+
+    // read 1024 bytes at a time
+    while((bytes_read = read(serverfd, buffer, BUFFER_SIZE)) > 0)
+    {    // TODO: implement sigint handling
+
+        // realloc another bytes_read number of bytes to entire_stream
+        uint8_t *temp = (uint8_t *)realloc(entire_stream, total_bytes_read + (size_t)bytes_read);
+        if(temp == NULL)    // if realloc failed
+        {
+            *err = errno;
+            perror("realloc");
+            if(entire_stream != NULL)
+            {
+                free(entire_stream);
+            }
+            return NULL;
+        }
+        entire_stream = temp;
+        memcpy(entire_stream + total_bytes_read, buffer, (size_t)bytes_read);
+        total_bytes_read += (size_t)bytes_read;
+    }
+
+    if(bytes_read == -1)
+    {
+        *err = errno;
+        perror("read");
+        if(entire_stream != NULL)
+        {
+            free(entire_stream);
+        }
+        return NULL;
+    }
+
+    return entire_stream;
 }
