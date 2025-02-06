@@ -22,7 +22,7 @@ void construct_message(struct Message *header, uint8_t type, uint8_t version, ui
     header->payload_len = length;
 }
 
-void serialize_and_send(int serverfd, const struct ACC_Create_Login *packet)
+void send_and_serialize_ACC_Create_Login(int serverfd, const struct ACC_Create_Login *packet)
 {
     size_t packet_size;
 
@@ -40,8 +40,8 @@ void serialize_and_send(int serverfd, const struct ACC_Create_Login *packet)
     payload_buffer = (uint8_t *)malloc(packet->message->payload_len);
 
     // copy payload memory into the payload buffer
-    memcpy(payload_buffer, packet->username, sizeof(*packet->username));
-    memcpy(payload_buffer + sizeof(packet->username), packet->password, sizeof(*packet->password));
+    memcpy(payload_buffer, packet->username, (size_t)packet->username[1] + 2);
+    memcpy(payload_buffer + packet->username[1] + 2, packet->password, (size_t)packet->password[1] + 2);
 
     // convert the uint16_t attributes to network byte order
     sender_id_n   = htons(packet->message->sender_id);
@@ -56,7 +56,7 @@ void serialize_and_send(int serverfd, const struct ACC_Create_Login *packet)
     memcpy(buffer + LENGTH_INDEX, &payload_len_n, sizeof(uint16_t));
 
     // assign the payload past the header
-    memcpy(buffer + HEADER_SIZE, payload_buffer, sizeof(packet->message->payload_len));
+    memcpy(buffer + HEADER_SIZE, payload_buffer, packet->message->payload_len);
 
     // send the buffer
     send_packet(serverfd, buffer, packet_size);
