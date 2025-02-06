@@ -8,15 +8,18 @@
 int main(int argc, char *argv[])
 {
     struct socket_network net_socket;
-    struct Message        message;
-    struct ACC_Create     acc_create;
+    // struct ConnectionMessage connection_message;
+    struct Message          message;
+    struct ACC_Create_Login acc_create_login;
 
     int res;
     int err = 0;
 
-    acc_create.message  = &message;
-    acc_create.username = NULL;
-    acc_create.password = NULL;
+    // connection_message.active_server_ip = NULL;
+
+    acc_create_login.message  = &message;
+    acc_create_login.username = NULL;
+    acc_create_login.password = NULL;
 
     handle_arguments(argc, argv, &net_socket, &err);
     if(err != 0)
@@ -46,6 +49,10 @@ int main(int argc, char *argv[])
     // }
     // end socket connect
 
+    // We need to query server manager for active server ip first
+    // construct_connection_message()
+    // serialize_and_send_connection_message()
+
     res = display_menu();
     if(res == 1)
     {
@@ -53,38 +60,17 @@ int main(int argc, char *argv[])
     }
     else if(res == 2)
     {
-        start_signup_form(&acc_create, &err);
+        start_signup_form(&acc_create_login, &err);
         if(err != 0)
         {
             goto cleanup;
         }
     }
 
-    if(acc_create.username != NULL)
-    {
-        printf("String: ");
-        for(size_t i = 0; acc_create.username[i] != 0; i++)
-        {
-            printf("%02X ", acc_create.username[i]);
-        }
-        printf("\n");
-    }
-
-    if(acc_create.password != NULL)
-    {
-        printf("String: ");
-        for(size_t i = 0; acc_create.password[i] != 0; i++)
-        {
-            printf("%02X ", acc_create.password[i]);
-        }
-        printf("\n");
-    }
-
     printf("client ran successfully\n");
 cleanup:
     socket_close(net_socket.sockfd);
-    free(acc_create.username);
-    free(acc_create.password);
+    free_acc_create(&acc_create_login);
 done:
     return 0;
 }
