@@ -10,7 +10,7 @@
 #define HEIGHT 10
 #define WIDTH 40
 
-void start_signup_form(struct ACC_Create *acc_create, int *err)
+void start_signup_form(struct ACC_Create_Login *acc_create, int setting, int *err)
 {
     char    username[INPUT_BUFFER_SIZE];
     char    password[INPUT_BUFFER_SIZE];
@@ -39,7 +39,14 @@ void start_signup_form(struct ACC_Create *acc_create, int *err)
     // Create a new window for the GUI
     win = newwin(height, width, starty, startx);
     draw_box(win);
-    mvwprintw(win, 1, 2, "Create Account");
+    if(setting == 2)
+    {
+        mvwprintw(win, 1, 2, "Create Account");
+    }
+    else
+    {
+        mvwprintw(win, 1, 2, "Login");
+    }
 
     // Input fields for username and password
     mvwprintw(win, 3, 2, "Username: ");    // NOLINT

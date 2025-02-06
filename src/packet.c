@@ -22,7 +22,7 @@ void construct_message(struct Message *header, uint8_t type, uint8_t version, ui
     header->payload_len = length;
 }
 
-void serialize_and_send(const int serverfd, const struct Message *header, uint8_t *username, uint8_t *password)
+void send_and_serialize_ACC_Create_Login(int serverfd, const struct ACC_Create_Login *packet)
 {
     size_t packet_size;
 
@@ -33,30 +33,42 @@ void serialize_and_send(const int serverfd, const struct Message *header, uint8_
     uint16_t payload_len_n;
 
     // assign the packet size
-    packet_size = (size_t)HEADER_SIZE + header->payload_len;
+    packet_size = (size_t)HEADER_SIZE + packet->message->payload_len;
 
     // malloc for each corresponding buffer
-    buffer         = (uint8_t *)malloc(packet_size);
-    payload_buffer = (uint8_t *)malloc(header->payload_len);
+    buffer = (uint8_t *)malloc(packet_size);
+    if(!buffer)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+    payload_buffer = (uint8_t *)malloc(packet->message->payload_len);
+    if(!payload_buffer)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
 
     // copy payload memory into the payload buffer
-    memcpy(payload_buffer, username, sizeof(*username));
-    memcpy(payload_buffer + sizeof(username), password, sizeof(*password));
+    memcpy(payload_buffer, packet->username, (size_t)packet->username[1] + 2);
+    memcpy(payload_buffer + packet->username[1] + 2, packet->password, (size_t)packet->password[1] + 2);
 
     // convert the uint16_t attributes to network byte order
-    sender_id_n   = htons(header->sender_id);
-    payload_len_n = htons(header->payload_len);
+    sender_id_n   = htons(packet->message->sender_id);
+    payload_len_n = htons(packet->message->payload_len);
 
     // assign the first 2 bytes of the packet (uint8_t)
-    buffer[0] = header->packet_type;
-    buffer[1] = header->version;
+    buffer[0] = packet->message->packet_type;
+    buffer[1] = packet->message->version;
 
     // assign the next 4 bytes (uint16_t)
     memcpy(buffer + ID_INDEX, &sender_id_n, sizeof(uint16_t));
     memcpy(buffer + LENGTH_INDEX, &payload_len_n, sizeof(uint16_t));
 
     // assign the payload past the header
-    memcpy(buffer + HEADER_SIZE, payload_buffer, sizeof(header->payload_len));
+    memcpy(buffer + HEADER_SIZE, payload_buffer, packet->message->payload_len);
+
+    send_packet_t(buffer, packet_size);
 
     // send the buffer
     send_packet(serverfd, buffer, packet_size);
@@ -73,6 +85,17 @@ void send_packet(const int serverfd, const uint8_t *buffer, const size_t size)
     {
         perror("Write");
     }
+}
+
+void send_packet_t(const uint8_t *buffer, size_t packet_size)
+{
+    // Mock send function
+    printf("Sending packet of size %zu\n", packet_size);
+    for(size_t i = 0; i < packet_size; i++)
+    {
+        printf("%02X ", buffer[i]);
+    }
+    printf("\n");
 }
 
 void construct_connection_message(struct ConnectionMessage *connection_message, const int message_type, const int version)

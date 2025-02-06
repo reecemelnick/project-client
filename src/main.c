@@ -1,6 +1,6 @@
-
-#include "login_form.h"
+#include "messages.h"
 #include "network_utils.h"
+#include "packet.h"
 #include "signup_form.h"
 #include "start_menu.h"
 #include <ncurses.h>
@@ -9,11 +9,12 @@ int main(int argc, char *argv[])
 {
     struct socket_network net_socket;
     // struct ConnectionMessage connection_message;
-    struct Message    message;
-    struct ACC_Create acc_create;
+    struct Message          message;
+    struct ACC_Create_Login acc_create;
 
-    int res;
-    int err = 0;
+    int  res;
+    bool success = false;
+    int  err     = 0;
 
     // connection_message.active_server_ip = NULL;
 
@@ -43,29 +44,48 @@ int main(int argc, char *argv[])
     // end socket initialization
 
     // socket connect
-    // socket_connect(net_socket.sockfd, (struct sockaddr *)(&(net_socket.addr)), net_socket.addr_len, &err);
-    // if(err != 0)
-    // {
-    //     goto cleanup;
-    // }
+    socket_connect(net_socket.sockfd, (struct sockaddr *)(&(net_socket.addr)), net_socket.addr_len, &err);
+    if(err != 0)
+    {
+        goto cleanup;
+    }
     // end socket connect
 
-    // We need to query server manager for active server ip first
-    // construct_connection_message()
-    // serialize_and_send_connection_message()
-
     res = display_menu();
-    if(res == 1)
+
+    while(!success)
     {
-        start_login_form();
-    }
-    else if(res == 2)
-    {
-        start_signup_form(&acc_create, &err);
+        uint8_t type;
+        uint8_t version;
+        uint8_t id;
+        uint8_t payload_len;
+
+        // one form now, for login and create account
+        start_signup_form(&acc_create, res, &err);
         if(err != 0)
         {
             goto cleanup;
         }
+
+        // if res == 1. send login request
+
+        // if(res == 1)
+        // {
+        //     type = LOGIN_REQUEST;
+        // }
+        // else if(res == 2)
+        // {
+        //     type = ACCOUNT_CREATE;
+        // }
+        // if res == 2. send create account request
+        type        = LOGIN_REQUEST;
+        version     = 0x01;
+        id          = 0x01;
+        payload_len = (uint8_t)(strlen((char *)acc_create.username) + strlen((char *)acc_create.username));
+
+        construct_message(&message, type, version, id, payload_len);
+
+        send_and_serialize_ACC_Create_Login(net_socket.sockfd, &acc_create);
     }
 
     printf("client ran successfully\n");

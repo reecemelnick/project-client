@@ -62,4 +62,9 @@ typedef enum {
     UTCTIME = 23,
 } Tag;
 
+enum packet_types {
+    LOGIN_REQUEST = 10,
+    ACCOUNT_CREATE = 13
+};
+
 #endif    // MESSAGES_H

@@ -36,10 +36,15 @@ uint8_t *string_to_bytes(const char *str, int *err)
     return converted_str;
 }
 
-void convert_username_password(struct ACC_Create *acc_create, const char *username, const char *password, int *err)
+void convert_username_password(struct ACC_Create_Login *acc_create, const char *username, const char *password, int *err)
 {
     // Initializes sequence length
     acc_create->seq_len = (uint8_t *)malloc(2 * sizeof(uint8_t));
+    if(!acc_create->seq_len)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
 
     acc_create->seq_len[0] = (uint8_t)SEQUENCE;
     acc_create->seq_len[1] = (uint8_t)((strlen(username) + 2) + (strlen(password) + 2));
@@ -71,7 +76,7 @@ void convert_username_password(struct ACC_Create *acc_create, const char *userna
     // printf("\n");
 }
 
-void free_acc_create(struct ACC_Create *acc_create)
+void free_acc_create(struct ACC_Create_Login *acc_create)
 {
     if(acc_create->seq_len != NULL)
     {
