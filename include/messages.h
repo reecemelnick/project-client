@@ -33,7 +33,7 @@ struct Message {
     uint16_t payload_len;
 };
 
-struct ACC_Create {
+struct ACC_Create_Login {
     // cppcheck-suppress unusedStructMember
     struct Message *message;
     // cppcheck-suppress unusedStructMember
