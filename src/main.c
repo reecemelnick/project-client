@@ -67,29 +67,6 @@ int main(int argc, char *argv[])
         }
     }
 
-<<<<<<< HEAD
-    if(acc_create.username != NULL)
-    {
-        printf("String: ");
-        for(size_t i = 0; acc_create.username[i] != 0; i++)
-        {
-            printf("%02X ", acc_create.username[i]);
-        }
-        printf("\n");
-    }
-
-    if(acc_create.password != NULL)
-    {
-        printf("String: ");
-        for(size_t i = 0; acc_create.password[i] != 0; i++)
-        {
-            printf("%02X ", acc_create.password[i]);
-        }
-        printf("\n");
-    }
-
-=======
->>>>>>> 6eef303 (renamed account files to payload)
     printf("client ran successfully\n");
 cleanup:
     socket_close(net_socket.sockfd);
