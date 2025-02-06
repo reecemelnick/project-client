@@ -18,7 +18,6 @@ int main(int argc, char *argv[])
     // connection_message.active_server_ip = NULL;
 
     acc_create_login.message  = &message;
-    acc_create_login.seq_len  = NULL;
     acc_create_login.username = NULL;
     acc_create_login.password = NULL;
 
