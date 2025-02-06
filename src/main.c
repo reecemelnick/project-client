@@ -9,18 +9,18 @@ int main(int argc, char *argv[])
 {
     struct socket_network net_socket;
     // struct ConnectionMessage connection_message;
-    struct Message    message;
-    struct ACC_Create acc_create;
+    struct Message          message;
+    struct ACC_Create_Login acc_create_login;
 
     int res;
     int err = 0;
 
     // connection_message.active_server_ip = NULL;
 
-    acc_create.message  = &message;
-    acc_create.seq_len  = NULL;
-    acc_create.username = NULL;
-    acc_create.password = NULL;
+    acc_create_login.message  = &message;
+    acc_create_login.seq_len  = NULL;
+    acc_create_login.username = NULL;
+    acc_create_login.password = NULL;
 
     handle_arguments(argc, argv, &net_socket, &err);
     if(err != 0)
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     }
     else if(res == 2)
     {
-        start_signup_form(&acc_create, &err);
+        start_signup_form(&acc_create_login, &err);
         if(err != 0)
         {
             goto cleanup;
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
     printf("client ran successfully\n");
 cleanup:
     socket_close(net_socket.sockfd);
-    free_acc_create(&acc_create);
+    free_acc_create(&acc_create_login);
 done:
     return 0;
 }
