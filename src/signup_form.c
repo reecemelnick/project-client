@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+// hellobuddyhowareyou
+
 #define INPUT_BUFFER_SIZE 50
 #define HEIGHT 10
 #define WIDTH 40
@@ -14,6 +16,8 @@ void start_signup_form(struct ACC_Create_Login *acc_create, int setting, int *er
 {
     char    username[INPUT_BUFFER_SIZE];
     char    password[INPUT_BUFFER_SIZE];
+    char   *user;
+    char   *pass;
     int     height;
     int     width;
     int     starty;
@@ -86,26 +90,11 @@ void start_signup_form(struct ACC_Create_Login *acc_create, int setting, int *er
                 }
             }
             // temp solution press \ to switch input field
-            else if(ch == KEY_DOWN)    // NOLINT
+            else if(ch == KEY_DOWN || ch == '\n')    // NOLINT
             {
                 wmove(win, 5, 12 + (int)j);    // NOLINT
                 break;
             }
-            else if(ch == '\n')
-            {
-                if(j > 0)
-                {
-                    inputting_info = 0;
-                }
-                break;
-            }
-        }
-
-        username[i] = '\0';    // Null-terminate the username string
-
-        if(inputting_info == 0)
-        {
-            break;
         }
 
         if(j == 0)
@@ -135,24 +124,52 @@ void start_signup_form(struct ACC_Create_Login *acc_create, int setting, int *er
             else if(ch == KEY_UP)    // NOLINT
             {
                 wmove(win, 3, 12 + (int)i);    // NOLINT
+
                 break;
             }
             else if(ch == '\n')
             {
-                inputting_info = 0;
                 break;
             }
         }
 
-        password[j] = '\0';
+        if(i == 0 || j == 0)
+        {
+            inputting_info = 1;
+            wmove(win, 3, 12 + (int)i);    // NOLINT
+        }
+        else
+        {
+            break;
+        }
     }
+
+    username[i] = '\0';
+    password[j] = '\0';
+
+    user = (char *)malloc(strlen(username));
+    if(!user)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    pass = (char *)malloc(strlen(password));
+    if(!pass)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    memcpy(user, username, strlen(username));
+    memcpy(pass, password, strlen(password));
 
     // clear the window and display the entered details
     werase(win);
     draw_box(win);
     mvwprintw(win, 2, 2, "Account Details:");
-    mvwprintw(win, 4, 2, "Username: %s", username);    // NOLINT
-    mvwprintw(win, 6, 2, "Password: %s", password);    // NOLINT
+    mvwprintw(win, 4, 2, "Username: %s, len: %d", username, (int)strlen(username));    // NOLINT
+    mvwprintw(win, 6, 2, "Password: %s, len: %d", password, (int)strlen(password));    // NOLINT
     wrefresh(win);
 
     // wait for the user to press a key before exiting
@@ -163,5 +180,5 @@ void start_signup_form(struct ACC_Create_Login *acc_create, int setting, int *er
     delwin(win);
     endwin();
 
-    convert_username_password(acc_create, username, password, err);
+    convert_username_password(acc_create, user, pass, err);
 }

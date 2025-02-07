@@ -36,7 +36,7 @@ uint8_t *string_to_bytes(const char *str, int *err)
     return converted_str;
 }
 
-void convert_username_password(struct ACC_Create_Login *acc_create, const char *username, const char *password, int *err)
+void convert_username_password(struct ACC_Create_Login *acc_create, char *username, char *password, int *err)
 {
     // Initializes sequence length
     acc_create->seq_len = (uint8_t *)malloc(2 * sizeof(uint8_t));
@@ -74,6 +74,9 @@ void convert_username_password(struct ACC_Create_Login *acc_create, const char *
     //     printf("%02X ", acc_create->password[yy]);    // %02X for hex with leading zero
     // }
     // printf("\n");
+
+    free(username);
+    free(password);
 }
 
 void free_acc_create(struct ACC_Create_Login *acc_create)

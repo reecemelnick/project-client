@@ -78,20 +78,24 @@ int main(int argc, char *argv[])
         //     type = ACCOUNT_CREATE;
         // }
         // if res == 2. send create account request
+
+        // printf("back in main len user: %d\n", (int)(strlen((char *)acc_create.username));
+
         type        = LOGIN_REQUEST;
         version     = 0x01;
         id          = 0x01;
-        payload_len = (uint8_t)(strlen((char *)acc_create.username) + strlen((char *)acc_create.username));
+        payload_len = (uint8_t)(strlen((char *)acc_create.username) + strlen((char *)acc_create.password));
 
         construct_message(&message, type, version, id, payload_len);
 
         send_and_serialize_ACC_Create_Login(net_socket.sockfd, &acc_create);
+
+        free_acc_create(&acc_create);
     }
 
     printf("client ran successfully\n");
 cleanup:
     socket_close(net_socket.sockfd);
-    free_acc_create(&acc_create);
 done:
     return 0;
 }

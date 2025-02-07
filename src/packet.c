@@ -68,6 +68,8 @@ void send_and_serialize_ACC_Create_Login(int serverfd, const struct ACC_Create_L
     // assign the payload past the header
     memcpy(buffer + HEADER_SIZE, payload_buffer, packet->message->payload_len);
 
+    printf("Sending packet of size %zu\n", packet_size);
+
     send_packet_t(buffer, packet_size);
 
     // send the buffer
@@ -90,7 +92,7 @@ void send_packet(const int serverfd, const uint8_t *buffer, const size_t size)
 void send_packet_t(const uint8_t *buffer, size_t packet_size)
 {
     // Mock send function
-    printf("Sending packet of size %zu\n", packet_size);
+    // printf("Sending packet of size %zu\n", packet_size);
     for(size_t i = 0; i < packet_size; i++)
     {
         printf("%02X ", buffer[i]);
