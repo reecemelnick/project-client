@@ -148,3 +148,64 @@ uint8_t *read_entire_stream(const int serverfd, int *err)
 
     return entire_stream;
 }
+
+// void parse_response_acc_create(const uint8_t *byte_stream, int *err)
+// {
+//     uint8_t *payload;
+//     int position = HEADER_SIZE;
+
+//     for(size_t yy = 0; yy < size; yy++)
+//     {
+//         printf("%02X ", byte_stream[yy]);    // %02X for hex with leading zero
+//     }
+//     printf("\n");
+
+//     printf("%02X\n", byte_stream[HEADER_SIZE]);
+// }
+
+uint16_t *parse_response_header(const uint8_t *byte_stream)
+{
+    uint8_t   packet_type;
+    uint8_t   version;
+    uint16_t  sender_id;
+    uint16_t *payload_len = (uint16_t *)malloc(sizeof(uint16_t));
+    size_t    position    = 0;
+
+    packet_type = byte_stream[position];
+    if(packet_type != SYS_Success && packet_type != SYS_Error)    // if packet_type is invalid then
+    {
+        printf("create and send error packet");
+        free(payload_len);
+        return NULL;
+    }
+    ++position;
+
+    version = byte_stream[position];
+    if(version != 1)    // if incorrect version
+    {
+        printf("create and send error packet");
+        free(payload_len);
+        return NULL;
+    }
+
+    sender_id = extract_next_twobytes(byte_stream, &position);
+    if(sender_id != 0)    // if sender_id not set to 0
+    {
+        printf("create and send error packet");
+        free(payload_len);
+        return NULL;
+    }
+
+    *payload_len = extract_next_twobytes(byte_stream, &position);
+
+    return payload_len;
+}
+
+uint16_t extract_next_twobytes(const uint8_t *byte_stream, size_t *position)
+{
+    uint16_t twobytes;
+    memcpy(&twobytes, byte_stream + *position, sizeof(uint16_t));
+    twobytes = ntohs(twobytes);
+    *position += 2;
+    return twobytes;
+}

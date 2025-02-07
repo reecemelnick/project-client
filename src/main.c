@@ -1,6 +1,7 @@
 
 #include "login_form.h"
 #include "network_utils.h"
+#include "packet.h"
 #include "signup_form.h"
 #include "start_menu.h"
 #include <ncurses.h>
@@ -65,6 +66,8 @@ int main(int argc, char *argv[])
         {
             goto cleanup;
         }
+        // parse_response_acc_create(acc_create_login.password, &err);
+        printf("called parse_response");
     }
 
     printf("client ran successfully\n");

@@ -50,6 +50,11 @@ typedef enum {
 } ConnectionPacketType;
 
 typedef enum {
+    SYS_Success = 0,
+    SYS_Error = 1
+} PacketType;
+
+typedef enum {
     BOOLEAN = 1,
     INTEGER = 2,
     NULL_VALUE = 5,

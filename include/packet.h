@@ -11,3 +11,9 @@ void construct_connection_message(struct ConnectionMessage *connection_message, 
 void serialize_and_send_connection_message(int serverfd, const struct ConnectionMessage *connection_message, int *err);
 
 uint8_t *read_entire_stream(int serverfd, int *err);
+
+// void parse_response_acc_create(const uint8_t *byte_stream, int *err);
+
+uint16_t *parse_response_header(const uint8_t *byte_stream);
+
+uint16_t extract_next_twobytes(const uint8_t *byte_stream, size_t *position);
