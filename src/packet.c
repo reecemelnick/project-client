@@ -36,8 +36,18 @@ void send_and_serialize_ACC_Create_Login(int serverfd, const struct ACC_Create_L
     packet_size = (size_t)HEADER_SIZE + packet->message->payload_len;
 
     // malloc for each corresponding buffer
-    buffer         = (uint8_t *)malloc(packet_size);
+    buffer = (uint8_t *)malloc(packet_size);
+    if(!buffer)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
     payload_buffer = (uint8_t *)malloc(packet->message->payload_len);
+    if(!payload_buffer)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
 
     // copy payload memory into the payload buffer
     memcpy(payload_buffer, packet->username, (size_t)packet->username[1] + 2);
@@ -58,6 +68,10 @@ void send_and_serialize_ACC_Create_Login(int serverfd, const struct ACC_Create_L
     // assign the payload past the header
     memcpy(buffer + HEADER_SIZE, payload_buffer, packet->message->payload_len);
 
+    printf("Sending packet of size %zu\n", packet_size);
+
+    send_packet_t(buffer, packet_size);
+
     // send the buffer
     send_packet(serverfd, buffer, packet_size);
 
@@ -73,6 +87,17 @@ void send_packet(const int serverfd, const uint8_t *buffer, const size_t size)
     {
         perror("Write");
     }
+}
+
+void send_packet_t(const uint8_t *buffer, size_t packet_size)
+{
+    // Mock send function
+    // printf("Sending packet of size %zu\n", packet_size);
+    for(size_t i = 0; i < packet_size; i++)
+    {
+        printf("%02X ", buffer[i]);
+    }
+    printf("\n");
 }
 
 void construct_connection_message(struct ConnectionMessage *connection_message, const int message_type, const int version)

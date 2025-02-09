@@ -6,11 +6,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define INPUT_BUFFER_SIZE 50
+// hellobuddyhowareyou
+
+#define INPUT_BUFFER_SIZE 25
 #define HEIGHT 10
 #define WIDTH 40
 
-void start_signup_form(struct ACC_Create_Login *acc_create_login, int *err)
+void start_signup_form(struct ACC_Create_Login *acc_create, int setting, int *err)
 {
     char    username[INPUT_BUFFER_SIZE];
     char    password[INPUT_BUFFER_SIZE];
@@ -39,7 +41,14 @@ void start_signup_form(struct ACC_Create_Login *acc_create_login, int *err)
     // Create a new window for the GUI
     win = newwin(height, width, starty, startx);
     draw_box(win);
-    mvwprintw(win, 1, 2, "Create Account");
+    if(setting == 2)
+    {
+        mvwprintw(win, 1, 2, "Create Account");
+    }
+    else
+    {
+        mvwprintw(win, 1, 2, "Login");
+    }
 
     // Input fields for username and password
     mvwprintw(win, 3, 2, "Username: ");    // NOLINT
@@ -78,7 +87,6 @@ void start_signup_form(struct ACC_Create_Login *acc_create_login, int *err)
                     wrefresh(win);
                 }
             }
-            // temp solution press \ to switch input field
             else if(ch == KEY_DOWN)    // NOLINT
             {
                 wmove(win, 5, 12 + (int)j);    // NOLINT
@@ -86,25 +94,12 @@ void start_signup_form(struct ACC_Create_Login *acc_create_login, int *err)
             }
             else if(ch == '\n')
             {
-                if(j > 0)
-                {
-                    inputting_info = 0;
-                }
+                wmove(win, 5, 12 + (int)j);    // NOLINT
+                inputting_info = 0;
                 break;
             }
         }
 
-        username[i] = '\0';    // Null-terminate the username string
-
-        if(inputting_info == 0)
-        {
-            break;
-        }
-
-        if(j == 0)
-        {
-            wmove(win, 5, 12);    // NOLINT
-        }
         while((ch = wgetch(win)))
         {    // read password character-by-character
             if(isalnum(ch) && j < sizeof(password) - 1)
@@ -132,20 +127,30 @@ void start_signup_form(struct ACC_Create_Login *acc_create_login, int *err)
             }
             else if(ch == '\n')
             {
+                wmove(win, 3, 12 + (int)i);    // NOLINT
                 inputting_info = 0;
                 break;
             }
         }
 
-        password[j] = '\0';
+        if(inputting_info == 0)
+        {
+            if(i == 0 || j == 0)
+            {
+                inputting_info = 1;
+            }
+        }
     }
+
+    username[i] = '\0';
+    password[j] = '\0';
 
     // clear the window and display the entered details
     werase(win);
     draw_box(win);
     mvwprintw(win, 2, 2, "Account Details:");
-    mvwprintw(win, 4, 2, "Username: %s", username);    // NOLINT
-    mvwprintw(win, 6, 2, "Password: %s", password);    // NOLINT
+    mvwprintw(win, 4, 2, "Username: %s, len: %d", username, (int)strlen(username));    // NOLINT
+    mvwprintw(win, 6, 2, "Password: %s, len: %d", password, (int)strlen(password));    // NOLINT
     wrefresh(win);
 
     // wait for the user to press a key before exiting
@@ -156,5 +161,5 @@ void start_signup_form(struct ACC_Create_Login *acc_create_login, int *err)
     delwin(win);
     endwin();
 
-    convert_username_password(acc_create_login, username, password, err);
+    convert_username_password(acc_create, username, password, err);
 }

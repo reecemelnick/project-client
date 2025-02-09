@@ -3,6 +3,19 @@
         "stdlib.h": "c",
         "string.h": "c",
         "ncurses.h": "c",
-        "start_menu.h": "c"
+        "start_menu.h": "c",
+        "__hash_table": "c",
+        "array": "c",
+        "type_traits": "c",
+        "forward_list": "c",
+        "limits": "c",
+        "ratio": "c",
+        "tuple": "c",
+        "variant": "c",
+        "charconv": "c",
+        "compare": "c",
+        "complex": "c",
+        "functional": "c",
+        "utility": "c"
     }
 }

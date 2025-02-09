@@ -36,10 +36,11 @@ uint8_t *string_to_bytes(const char *str, int *err)
     return converted_str;
 }
 
-void convert_username_password(struct ACC_Create_Login *acc_create_login, const char *username, const char *password, int *err)
+void convert_username_password(struct ACC_Create_Login *acc_create, const char *username, const char *password, int *err)
 {
-    // Converts username and password to byte stream and stores it accordingly to acc_create_login
-    acc_create_login->username = string_to_bytes(username, err);
+
+    // Converts username and password to byte stream and stores it accordingly to acc_create
+    acc_create->username = string_to_bytes(username, err);
 
     // printf("Username (hex): ");
     // for(size_t xx = 0; xx < strlen(username) + 2; xx++)
@@ -48,7 +49,7 @@ void convert_username_password(struct ACC_Create_Login *acc_create_login, const 
     // }
     // printf("\n");
 
-    acc_create_login->password = string_to_bytes(password, err);
+    acc_create->password = string_to_bytes(password, err);
 
     // printf("Password (hex): ");
     // for(size_t yy = 0; yy < strlen(password) + 2; yy++)
