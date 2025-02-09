@@ -67,21 +67,19 @@ int main(int argc, char *argv[])
             goto cleanup;
         }
 
-        // if res == 1. send login request
+        if(res == 1)
+        {
+            type = LOGIN_REQUEST;
+        }
+        else if(res == 2)
+        {
+            type = ACCOUNT_CREATE;
+        }
+        else
+        {
+            type = 0;
+        }
 
-        // if(res == 1)
-        // {
-        //     type = LOGIN_REQUEST;
-        // }
-        // else if(res == 2)
-        // {
-        //     type = ACCOUNT_CREATE;
-        // }
-        // if res == 2. send create account request
-
-        // printf("back in main len user: %d\n", (int)(strlen((char *)acc_create.username));
-
-        type        = LOGIN_REQUEST;
         version     = 0x01;
         id          = 0x01;
         payload_len = (uint8_t)(strlen((char *)acc_create.username) + strlen((char *)acc_create.password));
