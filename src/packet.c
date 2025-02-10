@@ -214,7 +214,7 @@ cleanup:
 }
 
 /*
-    Used to parse and validate server response packet header.
+    Validate server response packet header and extracts payload length.
         If error occurs, return null, else return payload length.
     byte_stream: stream of bytes received from server.
 */
@@ -285,6 +285,8 @@ uint16_t extract_next_twobytes(const uint8_t *byte_stream, size_t *position)
 
     byte_stream: stream of bytes received from the server.
     err: set if an error occurs.
+
+    Invoked after parse_response_header()
 */
 uint8_t *parse_and_extract_enumerated(const uint8_t *byte_stream, int *err)
 {
