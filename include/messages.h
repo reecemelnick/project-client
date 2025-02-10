@@ -51,7 +51,12 @@ typedef enum {
 
 typedef enum {
     SYS_Success = 0,
-    SYS_Error = 1
+    SYS_Error = 1,
+    ACC_Login = 10,
+    ACC_Login_Success = 11,
+    ACC_Logout = 12,
+    ACC_Create = 13,
+    ACC_Edit = 14
 } PacketType;
 
 typedef enum {
@@ -64,5 +69,16 @@ typedef enum {
     PRINTABLESTRING = 19,
     UTCTIME = 23,
 } Tag;
+
+typedef enum {
+    INVALID_USER_ID = 11,
+    INVALID_AUTH_INFO = 12,
+    USER_ALREADY_EXISTS = 13,
+
+    SERVER_FAILURE = 21,
+    
+    INVALID_REQUEST = 31,
+    REQUEST_TIMEOUT = 32
+} ErrorCode;
 
 #endif    // MESSAGES_H
