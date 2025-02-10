@@ -12,7 +12,9 @@ void serialize_and_send_connection_message(int serverfd, const struct Connection
 
 uint8_t *read_entire_stream(int serverfd, int *err);
 
-void parse_response_acc_create(const uint8_t *byte_stream, int *err);
+void parse_response_acc_create(const uint8_t *byte_stream, int packet_type, int *err);
+
+uint8_t *parse_sys_success(const uint8_t *byte_stream, int *err);
 
 uint16_t *parse_response_header(const uint8_t *byte_stream);
 

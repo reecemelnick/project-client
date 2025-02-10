@@ -149,45 +149,104 @@ uint8_t *read_entire_stream(const int serverfd, int *err)
     return entire_stream;
 }
 
-//TODO: function incomplete
-void parse_response_acc_create(const uint8_t *byte_stream, int *err)
+// TODO: function incomplete
+void parse_response_acc_create(const uint8_t *byte_stream, const int packet_type, int *err)
 {
-    size_t   length;
-    uint16_t *payload;
-    size_t   position      = HEADER_SIZE;
-    size_t   payload_index = 0;
-    Tag      enumerated    = ENUMERATED;
-    uint16_t *payload_len                = parse_response_header(byte_stream);
-    if (*payload_len < )
+    uint8_t *payload_value = NULL;
+    // Tag      enumerated    = ENUMERATED;
+    uint16_t *payload_len = parse_response_header(byte_stream);
+    if(payload_len == NULL)
+    {
+        // create and send error message
+        goto cleanup;
+    }
+    // payload length must be 3 bytes (enum: 1B, length: 1B, value: 1B)
+    if(*payload_len != 3)
+    {
+        goto cleanup;
+    }
 
     // if packet type is a success response, else if packet type is an error response
     if(*byte_stream == SYS_Success)
     {
-        // check payload tag
-        if(*(byte_stream + position) != enumerated)
+        payload_value = parse_sys_success(byte_stream, err);
+        if(payload_value == NULL)
         {
-            // ERROR: create and send error msg
-            return;
+            perror("parse_sys_success");
+            goto cleanup;
         }
-        ++position;
-
-        // store payload seq len
-        length = *(byte_stream + position);
-        ++position;
-
-        payload = (uint8_t *)malloc(length * sizeof(uint8_t));
-        while(payload_index < (position + length))
+        if(*payload_value == packet_type)
         {
-            *(payload + payload_index) = *(byte_stream + position + payload_index);
-            ++payload_index;
+            // SUCCESSFUL SERVER RESPONSE. payload is the expected packet type
+
+            goto cleanup;
+        }
+        else
+        {
+            // payload is not the expected packet type
+            // create and send error message
+            // set err
+            *err = 1;
+            goto cleanup;
         }
     }
     else if(*byte_stream == SYS_Error)
     {
-        return;
+        // handle err
+        *err = 1;
+        goto cleanup;
     }
 
-    free(payload_len);
+cleanup:
+    if(payload_len != NULL)
+    {
+        free(payload_len);
+    }
+    if(payload_value != NULL)
+    {
+        free(payload_value);
+    }
+    // TODO: check if err is set after calling.
+    //      if set then check error code
+    //      and probably create and send respective error msg?
+}
+
+// TODO: set err to respective error code. for now its just set, only need to check if set for now (ex. if err is != 0 then handle error accordingly)
+uint8_t *parse_sys_success(const uint8_t *byte_stream, int *err)
+{
+    size_t   length;
+    size_t   position = HEADER_SIZE;
+    uint8_t *temp_byte_stream;
+    uint8_t *payload_value;
+    // verify if payload tag is enum
+    if(*(byte_stream + position) != ENUMERATED)
+    {
+        // ERROR: create and send error msg
+        *err = 1;
+        return NULL;
+    }
+    ++position;
+
+    // store payload seq len
+    length = *(byte_stream + position);
+    // if length not one byte, then return
+    if(length != 1)
+    {
+        // create and send error message
+        *err = 2;
+        return NULL;
+    }
+    ++position;
+
+    temp_byte_stream = (uint8_t *)malloc(position * sizeof(uint8_t));
+    memcpy(temp_byte_stream, byte_stream, position);
+
+    payload_value = (uint8_t *)malloc(sizeof(uint8_t));
+    memcpy(payload_value, temp_byte_stream + position, 1);
+
+    free(temp_byte_stream);
+
+    return payload_value;
 }
 
 uint16_t *parse_response_header(const uint8_t *byte_stream)
@@ -201,7 +260,7 @@ uint16_t *parse_response_header(const uint8_t *byte_stream)
     packet_type = byte_stream[position];
     if(packet_type != SYS_Success && packet_type != SYS_Error)    // if packet_type is invalid then
     {
-        printf("create and send error packet");
+        // printf("create and send error packet");
         free(payload_len);
         return NULL;
     }
@@ -210,7 +269,7 @@ uint16_t *parse_response_header(const uint8_t *byte_stream)
     version = byte_stream[position];
     if(version != 1)    // if incorrect version
     {
-        printf("create and send error packet");
+        // printf("create and send error packet");
         free(payload_len);
         return NULL;
     }
@@ -218,17 +277,12 @@ uint16_t *parse_response_header(const uint8_t *byte_stream)
     sender_id = extract_next_twobytes(byte_stream, &position);
     if(sender_id != 0)    // if sender_id not set to 0
     {
-        printf("create and send error packet");
+        // printf("create and send error packet");
         free(payload_len);
         return NULL;
     }
 
     *payload_len = extract_next_twobytes(byte_stream, &position);
-    if(*payload_len == NULL)
-    {
-        free(payload_len);
-        return;
-    }
 
     return payload_len;
 }
