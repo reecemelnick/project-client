@@ -53,13 +53,6 @@ void convert_username_password(struct ACC_Create_Login *acc_create_login, const 
     // printf("\n");
 
     acc_create_login->password = string_to_bytes(password, err);
-
-    // printf("Password (hex): ");
-    // for(size_t yy = 0; yy < strlen(password) + 2; yy++)
-    // {
-    //     printf("%02X ", acc_create_login->password[yy]);    // %02X for hex with leading zero
-    // }
-    // printf("\n");
 }
 
 void free_acc_create(struct ACC_Create_Login *acc_create_login)

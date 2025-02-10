@@ -213,49 +213,6 @@ cleanup:
     //      and probably create and send respective error msg?
 }
 
-// TODO: set err to respective error code. for now its just set, only need to check if set for now (ex. if err is != 0 then handle error accordingly)
-/*
-    Parses sys_success packet.
-    byte_stream: stream of bytes received from the server.
-    err: set if an error occurs.
-*/
-uint8_t *parse_sys_success(const uint8_t *byte_stream, int *err)
-{
-    size_t   length;
-    size_t   position = HEADER_SIZE;
-    uint8_t *temp_byte_stream;
-    uint8_t *payload_value;
-    // verify if payload tag is enum
-    if(*(byte_stream + position) != ENUMERATED)
-    {
-        // ERROR: create and send error msg
-        *err = 1;
-        return NULL;
-    }
-    ++position;
-
-    // check length if it is one byte, if not then return
-    if(*(byte_stream + position) != 1)
-    {
-        // create and send error message
-        *err = 2;
-        return NULL;
-    }
-    ++position;
-
-    // create a non-constant byte stream to work with
-    temp_byte_stream = (uint8_t *)malloc(position * sizeof(uint8_t));
-    memcpy(temp_byte_stream, byte_stream, position);
-
-    // store payload value
-    payload_value = (uint8_t *)malloc(sizeof(uint8_t));
-    memcpy(payload_value, temp_byte_stream + position, 1);
-
-    free(temp_byte_stream);
-
-    return payload_value;
-}
-
 /*
     Used to parse server response packet header.
     byte_stream: stream of bytes received from server.
@@ -311,4 +268,50 @@ uint16_t extract_next_twobytes(const uint8_t *byte_stream, size_t *position)
     twobytes = ntohs(twobytes);
     *position += 2;
     return twobytes;
+}
+
+// PAYLOAD PARSING
+
+// TODO: set err to respective error code. for now its just set, only need to check if set for now (ex. if err is != 0 then handle error accordingly)
+/*
+    Parses sys_success packet.
+    Validates enum (1B), length (1B), value (1B)
+    byte_stream: stream of bytes received from the server.
+    err: set if an error occurs.
+*/
+uint8_t *parse_sys_success(const uint8_t *byte_stream, int *err)
+{
+    size_t   length;
+    size_t   position = HEADER_SIZE;
+    uint8_t *temp_byte_stream;
+    uint8_t *payload_value;
+    // verify if payload tag is enum
+    if(*(byte_stream + position) != ENUMERATED)
+    {
+        // ERROR: create and send error msg
+        *err = 1;
+        return NULL;
+    }
+    ++position;
+
+    // check length if it is one byte, if not then return
+    if(*(byte_stream + position) != 1)
+    {
+        // create and send error message
+        *err = 2;
+        return NULL;
+    }
+    ++position;
+
+    // create a non-constant byte stream to work with
+    temp_byte_stream = (uint8_t *)malloc(position * sizeof(uint8_t));
+    memcpy(temp_byte_stream, byte_stream, position);
+
+    // store payload value
+    payload_value = (uint8_t *)malloc(sizeof(uint8_t));
+    memcpy(payload_value, temp_byte_stream + position, 1);
+
+    free(temp_byte_stream);
+
+    return payload_value;
 }
