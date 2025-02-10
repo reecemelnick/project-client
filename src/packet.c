@@ -149,20 +149,25 @@ uint8_t *read_entire_stream(const int serverfd, int *err)
     return entire_stream;
 }
 
-// TODO: function incomplete
+/*
+    Parses account create response from server.
+    byte_stream: stream of bytes received from the server.
+    packet_type: PacketType enumeration passed in, representing the expected packet type in SYS_Success.
+    err: set if error occurs.
+*/
 void parse_response_acc_create(const uint8_t *byte_stream, const int packet_type, int *err)
 {
     uint8_t *payload_value = NULL;
-    // Tag      enumerated    = ENUMERATED;
     uint16_t *payload_len = parse_response_header(byte_stream);
     if(payload_len == NULL)
     {
-        // create and send error message
+        *err = 1;
         goto cleanup;
     }
     // payload length must be 3 bytes (enum: 1B, length: 1B, value: 1B)
     if(*payload_len != 3)
     {
+        *err = 1;
         goto cleanup;
     }
 
@@ -181,18 +186,15 @@ void parse_response_acc_create(const uint8_t *byte_stream, const int packet_type
 
             goto cleanup;
         }
-        else
+        else // payload is not the expected packet type
         {
-            // payload is not the expected packet type
             // create and send error message
-            // set err
             *err = 1;
             goto cleanup;
         }
     }
     else if(*byte_stream == SYS_Error)
     {
-        // handle err
         *err = 1;
         goto cleanup;
     }
@@ -212,6 +214,11 @@ cleanup:
 }
 
 // TODO: set err to respective error code. for now its just set, only need to check if set for now (ex. if err is != 0 then handle error accordingly)
+/*
+    Parses sys_success packet.
+    byte_stream: stream of bytes received from the server.
+    err: set if an error occurs.
+*/
 uint8_t *parse_sys_success(const uint8_t *byte_stream, int *err)
 {
     size_t   length;
@@ -227,10 +234,8 @@ uint8_t *parse_sys_success(const uint8_t *byte_stream, int *err)
     }
     ++position;
 
-    // store payload seq len
-    length = *(byte_stream + position);
-    // if length not one byte, then return
-    if(length != 1)
+    // check length if it is one byte, if not then return
+    if(*(byte_stream + position) != 1)
     {
         // create and send error message
         *err = 2;
@@ -238,9 +243,11 @@ uint8_t *parse_sys_success(const uint8_t *byte_stream, int *err)
     }
     ++position;
 
+    // create a non-constant byte stream to work with
     temp_byte_stream = (uint8_t *)malloc(position * sizeof(uint8_t));
     memcpy(temp_byte_stream, byte_stream, position);
 
+    // store payload value
     payload_value = (uint8_t *)malloc(sizeof(uint8_t));
     memcpy(payload_value, temp_byte_stream + position, 1);
 
@@ -249,6 +256,10 @@ uint8_t *parse_sys_success(const uint8_t *byte_stream, int *err)
     return payload_value;
 }
 
+/*
+    Used to parse server response packet header.
+    byte_stream: stream of bytes received from server.
+*/
 uint16_t *parse_response_header(const uint8_t *byte_stream)
 {
     uint8_t   packet_type;
@@ -258,7 +269,7 @@ uint16_t *parse_response_header(const uint8_t *byte_stream)
     size_t    position    = 0;
 
     packet_type = byte_stream[position];
-    if(packet_type != SYS_Success && packet_type != SYS_Error)    // if packet_type is invalid then
+    if(packet_type != SYS_Success && packet_type != SYS_Error)
     {
         // printf("create and send error packet");
         free(payload_len);
@@ -267,7 +278,8 @@ uint16_t *parse_response_header(const uint8_t *byte_stream)
     ++position;
 
     version = byte_stream[position];
-    if(version != 1)    // if incorrect version
+    // version # must be 1... as of milestone 1
+    if(version != 1)
     {
         // printf("create and send error packet");
         free(payload_len);
@@ -287,6 +299,11 @@ uint16_t *parse_response_header(const uint8_t *byte_stream)
     return payload_len;
 }
 
+/*
+    Extracts next two bytes of byte stream.
+    byte_stream: stream of bytes received from the server.
+    position: position to extract two bytes from.
+*/
 uint16_t extract_next_twobytes(const uint8_t *byte_stream, size_t *position)
 {
     uint16_t twobytes;
