@@ -17,3 +17,6 @@ void parse_response_acc_create(const uint8_t *byte_stream, int *err);
 uint16_t *parse_response_header(const uint8_t *byte_stream);
 
 uint16_t extract_next_twobytes(const uint8_t *byte_stream, size_t *position);
+int extract_payload_login_id(const uint8_t *byte_stream, uint16_t payload_len);
+int return_error_code(const uint8_t *byte_stream, uint16_t payload_len);
+char * return_auth_login_error(const uint8_t *byte_stream, uint16_t payload_len);
