@@ -277,8 +277,11 @@ uint16_t extract_next_twobytes(const uint8_t *byte_stream, size_t *position)
 // TODO: set err to respective error code. for now its just set, only need to check if set for now (ex. if err is != 0 then handle error accordingly)
 /*
     Parses enumerated field to extract value.
-    Validates enum (1B), length (1B), value (1B)
-    Used for SYS_Success and SYS_Error.
+        Validates enum (1B), length (1B), value (1B)
+        Used for SYS_Success, SYS_Error, ACC_Login_Success.
+        SYS_Success: returns packet type server is responding too.
+        SYS_Error: returns error code.
+        ACC_Login_Success: returns login id.
 
     byte_stream: stream of bytes received from the server.
     err: set if an error occurs.
@@ -322,6 +325,8 @@ uint8_t *parse_and_extract_enumerated(const uint8_t *byte_stream, int *err)
 
 /*
     Parses and extracts packet message.
+        Used for SYS_Error.
+        SYS_Error: returns error message.
 
     byte_stream: stream of bytes received from the server.
     offset: offset of byte_stream to start copying from. (total bytes up to message field)
