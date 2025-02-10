@@ -149,19 +149,46 @@ uint8_t *read_entire_stream(const int serverfd, int *err)
     return entire_stream;
 }
 
-// void parse_response_acc_create(const uint8_t *byte_stream, int *err)
-// {
-//     uint8_t *payload;
-//     int position = HEADER_SIZE;
+//TODO: function incomplete
+void parse_response_acc_create(const uint8_t *byte_stream, int *err)
+{
+    size_t   length;
+    uint16_t *payload;
+    size_t   position      = HEADER_SIZE;
+    size_t   payload_index = 0;
+    Tag      enumerated    = ENUMERATED;
+    uint16_t *payload_len                = parse_response_header(byte_stream);
+    if (*payload_len < )
 
-//     for(size_t yy = 0; yy < size; yy++)
-//     {
-//         printf("%02X ", byte_stream[yy]);    // %02X for hex with leading zero
-//     }
-//     printf("\n");
+    // if packet type is a success response, else if packet type is an error response
+    if(*byte_stream == SYS_Success)
+    {
+        // check payload tag
+        if(*(byte_stream + position) != enumerated)
+        {
+            // ERROR: create and send error msg
+            return;
+        }
+        ++position;
 
-//     printf("%02X\n", byte_stream[HEADER_SIZE]);
-// }
+        // store payload seq len
+        length = *(byte_stream + position);
+        ++position;
+
+        payload = (uint8_t *)malloc(length * sizeof(uint8_t));
+        while(payload_index < (position + length))
+        {
+            *(payload + payload_index) = *(byte_stream + position + payload_index);
+            ++payload_index;
+        }
+    }
+    else if(*byte_stream == SYS_Error)
+    {
+        return;
+    }
+
+    free(payload_len);
+}
 
 uint16_t *parse_response_header(const uint8_t *byte_stream)
 {
@@ -197,6 +224,11 @@ uint16_t *parse_response_header(const uint8_t *byte_stream)
     }
 
     *payload_len = extract_next_twobytes(byte_stream, &position);
+    if(*payload_len == NULL)
+    {
+        free(payload_len);
+        return;
+    }
 
     return payload_len;
 }
