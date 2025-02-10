@@ -157,8 +157,8 @@ uint8_t *read_entire_stream(const int serverfd, int *err)
 */
 void parse_response_acc_create(const uint8_t *byte_stream, const int packet_type, int *err)
 {
-    uint8_t *payload_value = NULL;
-    uint16_t *payload_len = parse_response_header(byte_stream);
+    uint8_t  *payload_value = NULL;
+    uint16_t *payload_len   = parse_response_header(byte_stream);
     if(payload_len == NULL)
     {
         *err = 1;
@@ -174,7 +174,7 @@ void parse_response_acc_create(const uint8_t *byte_stream, const int packet_type
     // if packet type is a success response, else if packet type is an error response
     if(*byte_stream == SYS_Success)
     {
-        payload_value = parse_sys_success(byte_stream, err);
+        payload_value = parse_and_extract_enumerated(byte_stream, err);
         if(payload_value == NULL)
         {
             perror("parse_sys_success");
@@ -186,7 +186,7 @@ void parse_response_acc_create(const uint8_t *byte_stream, const int packet_type
 
             goto cleanup;
         }
-        else // payload is not the expected packet type
+        else    // payload is not the expected packet type
         {
             // create and send error message
             *err = 1;
@@ -214,7 +214,8 @@ cleanup:
 }
 
 /*
-    Used to parse server response packet header.
+    Used to parse and validate server response packet header.
+        If error occurs, return null, else return payload length.
     byte_stream: stream of bytes received from server.
 */
 uint16_t *parse_response_header(const uint8_t *byte_stream)
@@ -258,6 +259,7 @@ uint16_t *parse_response_header(const uint8_t *byte_stream)
 
 /*
     Extracts next two bytes of byte stream.
+        Returns extracted bytes as type uint16_t.
     byte_stream: stream of bytes received from the server.
     position: position to extract two bytes from.
 */
@@ -274,12 +276,14 @@ uint16_t extract_next_twobytes(const uint8_t *byte_stream, size_t *position)
 
 // TODO: set err to respective error code. for now its just set, only need to check if set for now (ex. if err is != 0 then handle error accordingly)
 /*
-    Parses sys_success packet.
+    Parses enumerated field to extract value.
     Validates enum (1B), length (1B), value (1B)
+    Used for SYS_Success and SYS_Error.
+
     byte_stream: stream of bytes received from the server.
     err: set if an error occurs.
 */
-uint8_t *parse_sys_success(const uint8_t *byte_stream, int *err)
+uint8_t *parse_and_extract_enumerated(const uint8_t *byte_stream, int *err)
 {
     size_t   length;
     size_t   position = HEADER_SIZE;
@@ -314,4 +318,29 @@ uint8_t *parse_sys_success(const uint8_t *byte_stream, int *err)
     free(temp_byte_stream);
 
     return payload_value;
+}
+
+/*
+    Parses and extracts packet message.
+
+    byte_stream: stream of bytes received from the server.
+    offset: offset of byte_stream to start copying from. (total bytes up to message field)
+    message_length: size of the message to extract. (payload length - payload bytes excluding message)
+    err: set if an error occurs.
+
+    Invoked after parse_response_header()
+*/
+uint8_t *parse_and_extract_message(const uint8_t *byte_stream, size_t offset, size_t message_length, int *err)
+{
+    // allocate memory 
+    uint8_t *message = (uint8_t *)malloc(message_length * sizeof(uint8_t));
+    if (message == NULL) {
+        perror("malloc");
+        *err = errno;
+        goto cleanup;
+    }
+
+    // create a copy of byte_stream to work with, starting from offset
+    memcpy(message, byte_stream + offset, message_length);
+    return message;
 }
