@@ -288,40 +288,26 @@ uint16_t extract_next_twobytes(const uint8_t *byte_stream, size_t *position)
 
     Invoked after parse_response_header()
 */
-uint8_t *parse_and_extract_enumerated(const uint8_t *byte_stream, int *err)
+uint8_t *parse_and_extract_payload_value(const uint8_t *byte_stream, size_t payload_value_size, int *err)
 {
-    size_t   length;
-    size_t   position = HEADER_SIZE;
+    size_t length;
+    // size_t   position = HEADER_SIZE;
     uint8_t *temp_byte_stream;
     uint8_t *payload_value;
-    // verify if payload tag is enum
-    if(*(byte_stream + position) != ENUMERATED)
-    {
-        // ERROR: create and send error msg
-        *err = 1;
-        return NULL;
-    }
-    ++position;
-
-    // check length if it is one byte, if not then return
-    if(*(byte_stream + position) != 1)
-    {
-        // create and send error message
-        *err = 2;
-        return NULL;
-    }
-    ++position;
+    size_t   position = HEADER_SIZE;
 
     // create a non-constant byte stream to work with
-    temp_byte_stream = (uint8_t *)malloc(position * sizeof(uint8_t));
-    memcpy(temp_byte_stream, byte_stream, position);
+    temp_byte_stream = (uint8_t *)malloc((position + payload_value_size) * sizeof(uint8_t));
+    memcpy(temp_byte_stream, byte_stream, position + payload_value_size);
+
+    // moves position to payload value
+    position += 2;
 
     // store payload value
     payload_value = (uint8_t *)malloc(sizeof(uint8_t));
-    memcpy(payload_value, temp_byte_stream + position, 1);
+    memcpy(payload_value, temp_byte_stream + position, payload_value_size);
 
     free(temp_byte_stream);
-
     return payload_value;
 }
 
@@ -339,9 +325,10 @@ uint8_t *parse_and_extract_enumerated(const uint8_t *byte_stream, int *err)
 */
 uint8_t *parse_and_extract_message(const uint8_t *byte_stream, size_t offset, size_t message_length, int *err)
 {
-    // allocate memory 
+    // allocate memory
     uint8_t *message = (uint8_t *)malloc(message_length * sizeof(uint8_t));
-    if (message == NULL) {
+    if(message == NULL)
+    {
         perror("malloc");
         *err = errno;
         goto cleanup;

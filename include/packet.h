@@ -21,6 +21,6 @@ int      extract_payload_login_id(const uint8_t *byte_stream, uint16_t payload_l
 int      return_error_code(const uint8_t *byte_stream, uint16_t payload_len);
 char    *return_auth_login_error(const uint8_t *byte_stream, uint16_t payload_len);
 
-uint8_t *parse_and_extract_enumerated(const uint8_t *byte_stream, int *err);
+uint8_t *parse_and_extract_payload_value(const uint8_t *byte_stream, size_t payload_value_size, int *err);
 
 uint8_t *parse_and_extract_message(const uint8_t *byte_stream, size_t offset, size_t message_length, int *err);
