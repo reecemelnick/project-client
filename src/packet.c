@@ -1,18 +1,22 @@
 #include "../include/packet.h"
 #include "../include/messages.h"
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #define BUFFER_SIZE 1024
 #define HEADER_SIZE 6
 #define ID_INDEX 2
 #define LENGTH_INDEX 4
+#define TIMEOUT 100000
 
 void construct_message(struct Message *header, uint8_t type, uint8_t version, uint16_t id, uint16_t length)
 {
@@ -130,46 +134,233 @@ void serialize_and_send_connection_message(const int serverfd, const struct Conn
     free(buffer);
 }
 
-uint8_t *read_entire_stream(const int serverfd, int *err)
+uint8_t *read_entire_stream(const int serverfd, size_t *size, int *err)
 {
-    uint8_t  buffer[BUFFER_SIZE];
-    ssize_t  bytes_read       = 0;
-    size_t   total_bytes_read = 0;
-    uint8_t *entire_stream    = NULL;
+    uint8_t       buffer[BUFFER_SIZE];
+    uint8_t      *temp;
+    struct pollfd pfd              = {serverfd, POLLIN, 0};
+    size_t        total_bytes_read = 0;
+    uint8_t      *entire_stream    = NULL;
 
-    // read 1024 bytes at a time
-    while((bytes_read = read(serverfd, buffer, BUFFER_SIZE)) > 0)
-    {    // TODO: implement sigint handling
+    printf("Reading response\n");
 
-        // realloc another bytes_read number of bytes to temp
-        uint8_t *temp = (uint8_t *)realloc(entire_stream, total_bytes_read + (size_t)bytes_read);
-        if(temp == NULL)    // if realloc failed
-        {
-            *err = errno;
-            perror("realloc");
-            if(entire_stream != NULL)
-            {
-                free(entire_stream);
-            }
-            return NULL;
-        }
-        // if realloc was a success, assign to entire_stream
-        entire_stream = temp;
-        // appends data in buffer to entire_stream
-        memcpy(entire_stream + total_bytes_read, buffer, (size_t)bytes_read);
-        total_bytes_read += (size_t)bytes_read;
-    }
-
-    if(bytes_read == -1)
+    if(set_fd_non_blocking(serverfd) == -1)
     {
         *err = errno;
-        perror("read");
-        if(entire_stream != NULL)
-        {
-            free(entire_stream);
-        }
+        perror("Failed to set serverfd to non-blocking");
         return NULL;
     }
 
+    while(1)
+    {
+        ssize_t bytes_read = 0;
+
+        int ret = poll(&pfd, 1, TIMEOUT);
+        if(ret == 0)
+        {
+            continue;
+        }
+
+        if(ret < 0)
+        {
+            *err = errno;
+            perror("poll");
+            break;
+        }
+
+        if(pfd.revents & POLLIN)
+        {
+            bytes_read = read(serverfd, buffer, BUFFER_SIZE);
+            if(bytes_read == -1)
+            {
+                if(errno == EAGAIN || errno == EWOULDBLOCK)
+                {
+                    printf("// No data available at the moment, continue polling");
+                    continue;
+                }
+                *err = errno;
+                perror("read");
+                break;
+            }
+        }
+
+        if(bytes_read > 0)
+        {
+            temp = (uint8_t *)realloc(entire_stream, total_bytes_read + (size_t)bytes_read);
+            if(temp == NULL)
+            {
+                *err = errno;
+                perror("realloc");
+                if(entire_stream != NULL)
+                {
+                    free(entire_stream);
+                }
+                return NULL;
+            }
+
+            entire_stream = temp;
+            memcpy(entire_stream + total_bytes_read, buffer, (size_t)bytes_read);
+            total_bytes_read += (size_t)bytes_read;
+
+            printf("Total bytes read: %zu\n", total_bytes_read);
+        }
+
+        break;
+    }
+
+    *size = total_bytes_read;
+    printf("Done reading\n");
+
     return entire_stream;
+}
+
+uint8_t *get_user_id(const uint8_t *byte_stream)
+{
+    size_t   position = HEADER_SIZE + 2;
+    size_t   size     = 2;
+    uint8_t *user_id;
+
+    user_id = (uint8_t *)malloc(size * sizeof(uint8_t));
+    if(!user_id)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    memcpy(user_id, byte_stream + position, size);
+
+    return user_id;
+}
+
+uint8_t *get_error_code(const uint8_t *byte_stream, size_t size)
+{
+    size_t   position = HEADER_SIZE + 2;
+    uint8_t *err_code;
+
+    err_code = (uint8_t *)malloc(size * sizeof(uint8_t));
+    if(!err_code)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    memcpy(err_code, byte_stream + position, size);
+
+    return err_code;
+}
+
+uint8_t *parse_and_extract_message(const uint8_t *byte_stream, size_t offset, size_t message_length, int *err)
+{
+    // allocate memory
+    uint8_t *message = (uint8_t *)malloc(message_length * sizeof(uint8_t));
+    if(message == NULL)
+    {
+        perror("malloc");
+        *err = errno;
+        return NULL;
+    }
+
+    // create a copy of byte_stream to work with, starting from offset
+    memcpy(message, byte_stream + offset, message_length);
+    return message;
+}
+
+uint8_t *parse_and_extract_payload_value(const uint8_t *byte_stream, size_t payload_value_size)
+{
+    // size_t length;
+    // size_t   position = HEADER_SIZE;
+    uint8_t *temp_byte_stream;
+    uint8_t *payload_value;
+    size_t   position = HEADER_SIZE;
+
+    // create a non-constant byte stream to work with
+    temp_byte_stream = (uint8_t *)malloc((position + payload_value_size) * sizeof(uint8_t));
+    if(!temp_byte_stream)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+    memcpy(temp_byte_stream, byte_stream, position + payload_value_size);
+
+    // moves position to payload value
+    position += 2;
+
+    // store payload value
+    payload_value = (uint8_t *)malloc(payload_value_size * sizeof(uint8_t));
+    if(!payload_value)
+    {
+        perror("malloc");
+        free(temp_byte_stream);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("pos: %d", (int)position);
+
+    memcpy(payload_value, temp_byte_stream + position, (payload_value_size + 4));
+
+    free(temp_byte_stream);
+    return payload_value;
+}
+
+void parse_response_header(const uint8_t *byte_stream, struct Message *incoming_message)
+{
+    uint8_t  packet_type;
+    uint8_t  version;
+    uint16_t sender_id;
+    size_t   position;
+    uint16_t payload_len;
+
+    position = 0;
+
+    packet_type = byte_stream[position];
+
+    incoming_message->packet_type = packet_type;
+    ++position;
+
+    version = byte_stream[position];
+    if(version != 1)
+    {
+        printf("verion: create and send error packet");
+        exit(EXIT_FAILURE);
+    }
+    incoming_message->version = version;
+    ++position;
+
+    sender_id = extract_next_twobytes(byte_stream, &position);
+
+    if(sender_id != 0)
+    {
+        printf("id: create and send error packet");
+        exit(EXIT_FAILURE);
+    }
+    incoming_message->sender_id = sender_id;
+
+    payload_len                   = extract_next_twobytes(byte_stream, &position);
+    incoming_message->payload_len = payload_len;
+}
+
+uint16_t extract_next_twobytes(const uint8_t *byte_stream, size_t *position)
+{
+    uint16_t twobytes;
+    memcpy(&twobytes, byte_stream + *position, sizeof(uint16_t));
+    twobytes = ntohs(twobytes);
+    *position += 2;
+    return twobytes;
+}
+
+int set_fd_non_blocking(int fd)
+{
+    int flags = fcntl(fd, F_GETFL, 0);
+    if(flags == -1)
+    {
+        perror("fcntl F_GETFL");
+        return -1;
+    }
+    flags |= O_NONBLOCK;
+    if(fcntl(fd, F_SETFL, flags) == -1)
+    {
+        perror("fcntl F_SETFL");
+        return -1;
+    }
+    return 0;
 }

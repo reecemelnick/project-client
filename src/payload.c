@@ -38,7 +38,6 @@ uint8_t *string_to_bytes(const char *str, int *err)
 
 void convert_username_password(struct ACC_Create_Login *acc_create, const char *username, const char *password, int *err)
 {
-
     // Converts username and password to byte stream and stores it accordingly to acc_create
     acc_create->username = string_to_bytes(username, err);
 

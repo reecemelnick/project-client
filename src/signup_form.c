@@ -145,19 +145,6 @@ void start_signup_form(struct ACC_Create_Login *acc_create, int setting, int *er
     username[i] = '\0';
     password[j] = '\0';
 
-    // clear the window and display the entered details
-    werase(win);
-    draw_box(win);
-    mvwprintw(win, 2, 2, "Account Details:");
-    mvwprintw(win, 4, 2, "Username: %s, len: %d", username, (int)strlen(username));    // NOLINT
-    mvwprintw(win, 6, 2, "Password: %s, len: %d", password, (int)strlen(password));    // NOLINT
-    wrefresh(win);
-
-    // wait for the user to press a key before exiting
-    mvwprintw(win, 8, 2, "Press any key to exit...");    // NOLINT
-    wrefresh(win);
-    wgetch(win);
-
     delwin(win);
     endwin();
 

@@ -1,3 +1,5 @@
+#include "chat_screen.h"
+#include "error_message.h"
 #include "messages.h"
 #include "network_utils.h"
 #include "packet.h"
@@ -11,6 +13,12 @@ int main(int argc, char *argv[])
     // struct ConnectionMessage connection_message;
     struct Message          message;
     struct ACC_Create_Login acc_create;
+    uint8_t                *incoming_stream;    // NOLINT
+    size_t                  input_size;
+    struct Message          incoming_message;
+    uint8_t                *error_message;
+    uint8_t                *error_code;
+    uint8_t                *user_id;
 
     int  res;
     bool success = false;
@@ -66,6 +74,10 @@ int main(int argc, char *argv[])
             goto cleanup;
         }
 
+        version     = 0x01;
+        id          = 0x01;
+        payload_len = (uint8_t)(strlen((char *)acc_create.username) + strlen((char *)acc_create.password));
+
         if(res == 1)
         {
             type = LOGIN_REQUEST;
@@ -79,15 +91,61 @@ int main(int argc, char *argv[])
             type = 0;
         }
 
-        version     = 0x01;
-        id          = 0x01;
-        payload_len = (uint8_t)(strlen((char *)acc_create.username) + strlen((char *)acc_create.password));
-
+        // construct a message that will be sent to server
         construct_message(&message, type, version, id, payload_len);
 
+        // send packet that either represents account_create or login
         send_and_serialize_ACC_Create_Login(net_socket.sockfd, &acc_create);
 
+        // read the response into buffer
+        incoming_stream = read_entire_stream(net_socket.sockfd, &input_size, &err);
+
+        send_packet_t(incoming_stream, input_size);    // print (TEMP)
+
+        parse_response_header(incoming_stream, &incoming_message);
+
+        if(type == LOGIN_REQUEST)
+        {
+            if(incoming_message.packet_type == SYS_Error)
+            {
+                error_message = parse_and_extract_message(incoming_stream, 11, (size_t)incoming_message.payload_len - 3, &err);    // NOLINT
+
+                error_code = get_error_code(incoming_stream, 1);
+
+                display_error_message(error_message, error_code, (size_t)incoming_message.payload_len - 3, 1);
+
+                free(error_message);
+                free(error_code);
+            }
+            else if(incoming_message.packet_type == LOGIN_SUCCESS)
+            {
+                user_id = get_user_id(incoming_stream);
+                start_chat_screen(user_id);
+                success = true;
+                free(user_id);
+            }
+        }
+        else if(type == ACCOUNT_CREATE)
+        {
+            if(incoming_message.packet_type == SYS_Error)
+            {
+                error_message = parse_and_extract_message(incoming_stream, 11, (size_t)incoming_message.payload_len - 3, &err);    // NOLINT
+
+                error_code = get_error_code(incoming_stream, 1);
+
+                display_error_message(error_message, error_code, (size_t)incoming_message.payload_len - 3, 1);
+
+                free(error_message);
+                free(error_code);
+            }
+            else if(incoming_message.packet_type == SYS_Success)
+            {
+                success = true;
+            }
+        }
+
         free_acc_create(&acc_create);
+        free(incoming_stream);
     }
 
     printf("client ran successfully\n");

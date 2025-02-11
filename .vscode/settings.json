@@ -16,6 +16,7 @@
         "compare": "c",
         "complex": "c",
         "functional": "c",
-        "utility": "c"
+        "utility": "c",
+        "system_error": "c"
     }
 }

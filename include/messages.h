@@ -61,7 +61,10 @@ typedef enum {
 } Tag;
 
 enum packet_types {
+    SYS_Success = 0,
+    SYS_Error = 1,
     LOGIN_REQUEST = 10,
+    LOGIN_SUCCESS = 11,
     ACCOUNT_CREATE = 13
 };
 
