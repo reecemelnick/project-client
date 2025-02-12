@@ -173,7 +173,7 @@ uint8_t *read_entire_stream(const int serverfd, size_t *size, int *err)
             bytes_read = read(serverfd, buffer, BUFFER_SIZE);
             if(bytes_read == -1)
             {
-                if(errno == EAGAIN || errno == EWOULDBLOCK)
+                if(errno == EAGAIN)
                 {
                     printf("// No data available at the moment, continue polling");
                     continue;
@@ -296,7 +296,7 @@ uint8_t *parse_and_extract_payload_value(const uint8_t *byte_stream, size_t payl
 
     printf("pos: %d", (int)position);
 
-    memcpy(payload_value, temp_byte_stream + position, (payload_value_size + 4));
+    memcpy(payload_value, temp_byte_stream + position, payload_value_size);
 
     free(temp_byte_stream);
     return payload_value;
