@@ -24,4 +24,4 @@ uint8_t *parse_and_extract_payload_value(const uint8_t *byte_stream, size_t payl
 
 uint8_t *get_error_code(const uint8_t *byte_stream, size_t size);
 
-uint16_t get_user_id(const uint8_t *byte_stream);
+uint16_t *get_user_id(const uint8_t *byte_stream);

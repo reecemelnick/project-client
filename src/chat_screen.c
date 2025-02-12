@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int start_chat_screen(uint16_t *user_id)
+int start_chat_screen(const uint16_t *user_id)
 {
     WINDOW *usersWin       = NULL;
     WINDOW *chat_log_win   = NULL;
@@ -28,7 +28,7 @@ int start_chat_screen(uint16_t *user_id)
     return 0;
 }
 
-void chat_input(WINDOW *win, uint16_t *user_id)
+void chat_input(WINDOW *win, const uint16_t *user_id)
 {
     int height;
     int width;
@@ -44,10 +44,12 @@ void chat_input(WINDOW *win, uint16_t *user_id)
     draw_box(win);
     wmove(win, 1, 1);
     mvwprintw(win, 2, 2, "User ");    // NOLINT
-    for(size_t i = 0; i < 2; i++)
-    {
-        wprintw(win, "%d", (int)user_id[i]);
-    }
+    // for(size_t i = 0; i < 2; i++)
+    // {
+    //     wprintw(win, "%d", (int)user_id[i]);
+    // }
+    wprintw(win, "%d", *user_id);
+
     mvwprintw(win, 2, 9, ":");    // NOLINT
 
     while(1)

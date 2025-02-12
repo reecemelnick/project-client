@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     struct Message          incoming_message;
     uint8_t                *error_message;
     uint8_t                *error_code;
-    uint16_t                user_id;
+    uint16_t               *user_id;
 
     int  res;
     bool success = false;
@@ -126,10 +126,10 @@ int main(int argc, char *argv[])
             }
             else if(incoming_message.packet_type == LOGIN_SUCCESS)
             {
-                user_id = (get_user_id(incoming_stream));
-                start_chat_screen(&user_id);
+                user_id = get_user_id(incoming_stream);
+                start_chat_screen(user_id);
                 success = true;
-                // free(&user_id);
+                free(user_id);
             }
         }
         else if(type == ACCOUNT_CREATE)
