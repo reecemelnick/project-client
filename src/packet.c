@@ -214,13 +214,14 @@ uint8_t *read_entire_stream(const int serverfd, size_t *size, int *err)
     return entire_stream;
 }
 
-uint8_t *get_user_id(const uint8_t *byte_stream)
+uint16_t get_user_id(const uint8_t *byte_stream)
 {
-    size_t   position = HEADER_SIZE + 2;
-    size_t   size     = 2;
-    uint8_t *user_id;
+    size_t    position = HEADER_SIZE + 2;
+    size_t    size     = 2;
+    uint16_t *user_id;
+    uint16_t  ret_val;
 
-    user_id = (uint8_t *)malloc(size * sizeof(uint8_t));
+    user_id = (uint16_t *)malloc(sizeof(uint16_t));
     if(!user_id)
     {
         perror("malloc");
@@ -229,7 +230,10 @@ uint8_t *get_user_id(const uint8_t *byte_stream)
 
     memcpy(user_id, byte_stream + position, size);
 
-    return user_id;
+    ret_val = ntohs(*user_id);
+
+    free(user_id);
+    return ret_val;
 }
 
 uint8_t *get_error_code(const uint8_t *byte_stream, size_t size)

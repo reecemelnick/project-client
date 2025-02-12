@@ -15,7 +15,7 @@ uint8_t *string_to_bytes(const char *str, int *err)
 
     // allocate string length + 2 number of bytes to converted_str
     //      2 extra bytes are for the field type and string length
-    converted_str = (uint8_t *)malloc((str_len + 2) * sizeof(uint8_t));
+    converted_str = (uint8_t *)malloc((str_len + 3) * sizeof(uint8_t));
     if(converted_str == NULL)
     {
         *err = errno;
@@ -32,6 +32,8 @@ uint8_t *string_to_bytes(const char *str, int *err)
     {
         converted_str[index++] = (uint8_t)str[i];    // Use index to write
     }
+
+    converted_str[index] = '\0';
 
     return converted_str;
 }

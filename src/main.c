@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     struct Message          incoming_message;
     uint8_t                *error_message;
     uint8_t                *error_code;
-    uint8_t                *user_id;
+    uint16_t                user_id;
 
     int  res;
     bool success = false;
@@ -62,10 +62,10 @@ int main(int argc, char *argv[])
 
     while(!success)
     {
-        uint8_t type;
-        uint8_t version;
-        uint8_t id;
-        uint8_t payload_len;
+        uint8_t  type;
+        uint8_t  version;
+        uint16_t id;
+        uint16_t payload_len;
 
         // one form now, for login and create account
         start_signup_form(&acc_create, res, &err);
@@ -74,9 +74,16 @@ int main(int argc, char *argv[])
             goto cleanup;
         }
 
-        version     = 0x01;
-        id          = 0x01;
-        payload_len = (uint8_t)(strlen((char *)acc_create.username) + strlen((char *)acc_create.password));
+        version = 0x01;
+        id      = 0x01;
+        if(acc_create.username != NULL && acc_create.password != NULL)
+        {
+            payload_len = (uint16_t)(strlen((const char *)acc_create.username) + strlen((const char *)acc_create.password));
+        }
+        else
+        {
+            break;
+        }
 
         if(res == 1)
         {
@@ -119,10 +126,10 @@ int main(int argc, char *argv[])
             }
             else if(incoming_message.packet_type == LOGIN_SUCCESS)
             {
-                user_id = get_user_id(incoming_stream);
-                start_chat_screen(user_id);
+                user_id = (get_user_id(incoming_stream));
+                start_chat_screen(&user_id);
                 success = true;
-                free(user_id);
+                // free(&user_id);
             }
         }
         else if(type == ACCOUNT_CREATE)

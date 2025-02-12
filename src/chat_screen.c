@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int start_chat_screen(uint8_t *user_id)
+int start_chat_screen(uint16_t *user_id)
 {
     WINDOW *usersWin       = NULL;
     WINDOW *chat_log_win   = NULL;
@@ -28,7 +28,7 @@ int start_chat_screen(uint8_t *user_id)
     return 0;
 }
 
-void chat_input(WINDOW *win, uint8_t *user_id)
+void chat_input(WINDOW *win, uint16_t *user_id)
 {
     int height;
     int width;
