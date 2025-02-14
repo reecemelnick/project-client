@@ -4,7 +4,7 @@
 #include "messages.h"
 
 // Helper functions
-uint8_t *string_to_bytes(const char *str, int *err);
+void string_to_bytes(const char *str, uint8_t **message_str, size_t len, int *err);
 // ==========
 
 // ACC_Create helpers

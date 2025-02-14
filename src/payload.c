@@ -1,63 +1,33 @@
 #include "../include/payload.h"
 
-uint8_t *string_to_bytes(const char *str, int *err)
+void string_to_bytes(const char *str, uint8_t **message_str, size_t len, int *err)
 {
     // used to store byte stream of str
-    uint8_t *converted_str;
-    size_t   str_len;
-    size_t   index = 0;
     if(str == NULL)
     {
         *err = EINVAL;    // Invalid arg
-        return NULL;
+        return;
     }
-    str_len = strlen(str);
 
-    // allocate string length + 2 number of bytes to converted_str
-    //      2 extra bytes are for the field type and string length
-    converted_str = (uint8_t *)malloc((str_len + 3) * sizeof(uint8_t));
-    if(converted_str == NULL)
+    *message_str = (uint8_t *)malloc((len + 1) * sizeof(uint8_t));
+    if(!*message_str)
     {
-        *err = errno;
-        return NULL;
+        perror("malloc");
+        return;
     }
 
-    // set first byte as BER encoded utf8string
-    converted_str[index++] = UTF8STRING;
-    // set second byte to string length
-    converted_str[index++] = (uint8_t)str_len;
-
-    // converts and stores each char of str into a byte to converted_str
-    for(size_t i = 0; i < str_len; i++)
-    {
-        converted_str[index++] = (uint8_t)str[i];    // Use index to write
-    }
-
-    converted_str[index] = '\0';
-
-    return converted_str;
+    memcpy(*message_str, str, len);
+    (*message_str)[len] = '\0';
 }
 
 void convert_username_password(struct ACC_Create_Login *acc_create, const char *username, const char *password, int *err)
 {
     // Converts username and password to byte stream and stores it accordingly to acc_create
-    acc_create->username = string_to_bytes(username, err);
+    size_t len = strlen(username);
+    string_to_bytes(username, &acc_create->username, len, err);
 
-    // printf("Username (hex): ");
-    // for(size_t xx = 0; xx < strlen(username) + 2; xx++)
-    // {
-    //     printf("%02X ", acc_create_login->username[xx]);    // %02X for hex with leading zero
-    // }
-    // printf("\n");
-
-    acc_create->password = string_to_bytes(password, err);
-
-    // printf("Password (hex): ");
-    // for(size_t yy = 0; yy < strlen(password) + 2; yy++)
-    // {
-    //     printf("%02X ", acc_create_login->password[yy]);    // %02X for hex with leading zero
-    // }
-    // printf("\n");
+    len = strlen(password);
+    string_to_bytes(username, &acc_create->password, len, err);
 }
 
 void free_acc_create(struct ACC_Create_Login *acc_create_login)

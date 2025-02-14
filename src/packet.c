@@ -12,11 +12,9 @@
 #include <time.h>
 #include <unistd.h>
 
-#define BUFFER_SIZE 1024
 #define HEADER_SIZE 6
-#define ID_INDEX 2
-#define LENGTH_INDEX 4
 #define TIMEOUT 100000
+#define PACKETLEN 777
 
 void construct_message(struct Message *header, uint8_t type, uint8_t version, uint16_t id, uint16_t length)
 {
@@ -28,65 +26,51 @@ void construct_message(struct Message *header, uint8_t type, uint8_t version, ui
 
 void send_and_serialize_ACC_Create_Login(int serverfd, const struct ACC_Create_Login *packet)
 {
-    size_t packet_size;
-
-    uint8_t *buffer;
-    uint8_t *payload_buffer;
-
+    size_t   packet_size;
+    uint8_t  buffer[PACKETLEN];
     uint16_t sender_id_n;
     uint16_t payload_len_n;
+    size_t   username_len;
+    size_t   password_len;
+    int      pos = 0;
 
     // assign the packet size
     packet_size = (size_t)HEADER_SIZE + packet->message->payload_len;
 
-    // malloc for each corresponding buffer
-    buffer = (uint8_t *)malloc(packet_size);
-    if(!buffer)
-    {
-        perror("malloc");
-        exit(EXIT_FAILURE);
-    }
-    payload_buffer = (uint8_t *)malloc(packet->message->payload_len);
-    if(!payload_buffer)
-    {
-        perror("malloc");
-        exit(EXIT_FAILURE);
-    }
+    buffer[pos++] = packet->message->packet_type;
+    buffer[pos++] = packet->message->version;
 
-    // copy payload memory into the payload buffer
-    memcpy(payload_buffer, packet->username, (size_t)packet->username[1] + 2);
-    memcpy(payload_buffer + packet->username[1] + 2, packet->password, (size_t)packet->password[1] + 2);
-
-    // convert the uint16_t attributes to network byte order
     sender_id_n   = htons(packet->message->sender_id);
     payload_len_n = htons(packet->message->payload_len);
 
-    // assign the first 2 bytes of the packet (uint8_t)
-    buffer[0] = packet->message->packet_type;
-    buffer[1] = packet->message->version;
+    memcpy(buffer + pos, &sender_id_n, sizeof(uint16_t));
+    pos += (int)sizeof(uint16_t);
 
-    // assign the next 4 bytes (uint16_t)
-    memcpy(buffer + ID_INDEX, &sender_id_n, sizeof(uint16_t));
-    memcpy(buffer + LENGTH_INDEX, &payload_len_n, sizeof(uint16_t));
+    memcpy(buffer + pos, &payload_len_n, sizeof(uint16_t));
+    pos += (int)sizeof(uint16_t);
 
-    // assign the payload past the header
-    memcpy(buffer + HEADER_SIZE, payload_buffer, packet->message->payload_len);
+    buffer[pos++] = UTF8STRING;
+    username_len  = strlen((char *)packet->username);
+    buffer[pos++] = (uint8_t)username_len;
+    memcpy(buffer + pos, packet->username, username_len);
+    pos += (int)username_len;
+
+    buffer[pos++] = UTF8STRING;
+    password_len  = strlen((char *)packet->password);
+    buffer[pos++] = (uint8_t)password_len;
+    memcpy(buffer + pos, packet->password, password_len);
 
     printf("Sending packet of size %zu\n", packet_size);
 
+    // printing packet
     send_packet_t(buffer, packet_size);
 
     // send the buffer
     send_packet(serverfd, buffer, packet_size);
-
-    free(payload_buffer);
-    free(buffer);
 }
 
 void send_packet(const int serverfd, const uint8_t *buffer, const size_t size)
 {
-    // int bytes;
-
     if(write(serverfd, buffer, size) < 0)
     {
         perror("Write");
@@ -95,8 +79,6 @@ void send_packet(const int serverfd, const uint8_t *buffer, const size_t size)
 
 void send_packet_t(const uint8_t *buffer, size_t packet_size)
 {
-    // Mock send function
-    // printf("Sending packet of size %zu\n", packet_size);
     for(size_t i = 0; i < packet_size; i++)
     {
         printf("%02X ", buffer[i]);
@@ -134,13 +116,10 @@ void serialize_and_send_connection_message(const int serverfd, const struct Conn
     free(buffer);
 }
 
-uint8_t *read_entire_stream(const int serverfd, size_t *size, int *err)
+void read_entire_stream(const int serverfd, uint8_t **bytestream, size_t *size, int *err)
 {
-    uint8_t       buffer[BUFFER_SIZE];
-    uint8_t      *temp;
-    struct pollfd pfd              = {serverfd, POLLIN, 0};
-    size_t        total_bytes_read = 0;
-    uint8_t      *entire_stream    = NULL;
+    uint8_t       buffer[PACKETLEN];
+    struct pollfd pfd = {serverfd, POLLIN, 0};
 
     printf("Reading response\n");
 
@@ -148,7 +127,7 @@ uint8_t *read_entire_stream(const int serverfd, size_t *size, int *err)
     {
         *err = errno;
         perror("Failed to set serverfd to non-blocking");
-        return NULL;
+        return;
     }
 
     while(1)
@@ -170,7 +149,7 @@ uint8_t *read_entire_stream(const int serverfd, size_t *size, int *err)
 
         if(pfd.revents & POLLIN)
         {
-            bytes_read = read(serverfd, buffer, BUFFER_SIZE);
+            bytes_read = read(serverfd, buffer, PACKETLEN);
             if(bytes_read == -1)
             {
                 if(errno == EAGAIN)
@@ -186,32 +165,20 @@ uint8_t *read_entire_stream(const int serverfd, size_t *size, int *err)
 
         if(bytes_read > 0)
         {
-            temp = (uint8_t *)realloc(entire_stream, total_bytes_read + (size_t)bytes_read);
-            if(temp == NULL)
+            *bytestream = (uint8_t *)malloc((size_t)bytes_read * sizeof(uint8_t));
+            if(!*bytestream)
             {
-                *err = errno;
-                perror("realloc");
-                if(entire_stream != NULL)
-                {
-                    free(entire_stream);
-                }
-                return NULL;
+                perror("malloc");
+                return;
             }
-
-            entire_stream = temp;
-            memcpy(entire_stream + total_bytes_read, buffer, (size_t)bytes_read);
-            total_bytes_read += (size_t)bytes_read;
-
-            printf("Total bytes read: %zu\n", total_bytes_read);
+            memcpy(*bytestream, buffer, (size_t)bytes_read);
+            *size = (size_t)bytes_read;
+            printf("Total bytes read: %zu\n", (size_t)bytes_read);
         }
-
         break;
     }
 
-    *size = total_bytes_read;
     printf("Done reading\n");
-
-    return entire_stream;
 }
 
 uint16_t *get_user_id(const uint8_t *byte_stream)

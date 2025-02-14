@@ -10,7 +10,7 @@ void serialize_and_send_connection_message(int serverfd, const struct Connection
 
 void send_packet_t(const uint8_t *buffer, size_t packet_size);
 
-uint8_t *read_entire_stream(int serverfd, size_t *size, int *err);
+void read_entire_stream(int serverfd, uint8_t **bytestream, size_t *size, int *err);
 
 void parse_response_header(const uint8_t *byte_stream, struct Message *incoming_message);
 
