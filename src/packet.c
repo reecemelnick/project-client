@@ -17,6 +17,7 @@
 #define PACKETLEN 777
 #define IDINDEX 2
 
+// populates all the fields of a Message struct
 void construct_message(struct Message *header, uint8_t type, uint8_t version, uint16_t id, uint16_t length)
 {
     header->packet_type = type;
@@ -25,6 +26,7 @@ void construct_message(struct Message *header, uint8_t type, uint8_t version, ui
     header->payload_len = length;
 }
 
+// put all header info and payload into byte stream and send it to the server as a request
 void send_and_serialize_ACC_Create_Login(int serverfd, const struct ACC_Create_Login *packet)
 {
     size_t   packet_size;
@@ -70,6 +72,7 @@ void send_and_serialize_ACC_Create_Login(int serverfd, const struct ACC_Create_L
     send_packet(serverfd, buffer, packet_size);
 }
 
+// write the packet bytestream to the server
 void send_packet(const int serverfd, const uint8_t *buffer, const size_t size)
 {
     if(write(serverfd, buffer, size) < 0)
@@ -78,6 +81,7 @@ void send_packet(const int serverfd, const uint8_t *buffer, const size_t size)
     }
 }
 
+// print a bytestream (testing purposes)
 void send_packet_t(const uint8_t *buffer, size_t packet_size)
 {
     for(size_t i = 0; i < packet_size; i++)
@@ -87,36 +91,9 @@ void send_packet_t(const uint8_t *buffer, size_t packet_size)
     printf("\n");
 }
 
-void construct_connection_message(struct ConnectionMessage *connection_message, const int message_type, const int version)
-{
-    connection_message->message_type = (uint8_t)message_type;
-    connection_message->version      = (uint8_t)version;
-}
-
-void serialize_and_send_connection_message(const int serverfd, const struct ConnectionMessage *connection_message, int *err)
-{
-    uint8_t *buffer;
-    // 1 byte for message_type, 1 byte for version
-    size_t size = 2;
-    buffer      = (uint8_t *)malloc(2 * sizeof(uint8_t));
-    if(buffer == NULL)
-    {
-        *err = errno;
-        perror("malloc");
-        return;
-    }
-
-    // Assign first byte to message type
-    buffer[0] = connection_message->message_type;
-    // Assign second byte to version
-    buffer[1] = connection_message->version;
-
-    // Send the packet
-    send_packet(serverfd, buffer, size);
-
-    free(buffer);
-}
-
+// poll socket until there is data available to read
+// read the response packet from the server
+// copy the contents into a buffer
 void read_entire_stream(const int serverfd, uint8_t **bytestream, size_t *size, int *err)
 {
     uint8_t       buffer[PACKETLEN];
@@ -182,6 +159,7 @@ void read_entire_stream(const int serverfd, uint8_t **bytestream, size_t *size, 
     printf("Done reading\n");
 }
 
+// getthe user id from response packet
 void get_user_id(const uint8_t *byte_stream, uint16_t *user_id)
 {
     memcpy(user_id, byte_stream + IDINDEX, 2);    // NOLINT
@@ -189,6 +167,7 @@ void get_user_id(const uint8_t *byte_stream, uint16_t *user_id)
     *user_id = ntohs(*user_id);
 }
 
+// get the error code from the response packet
 uint8_t *get_error_code(const uint8_t *byte_stream, size_t size)
 {
     size_t   position = HEADER_SIZE + 2;
@@ -205,6 +184,7 @@ uint8_t *get_error_code(const uint8_t *byte_stream, size_t size)
     return err_code;
 }
 
+// get a string from the response header
 void parse_and_extract_message(const uint8_t *byte_stream, uint8_t **message, size_t offset, size_t message_length, int *err)
 {
     // allocate memory
@@ -318,4 +298,34 @@ int set_fd_non_blocking(int fd)
         return -1;
     }
     return 0;
+}
+
+void construct_connection_message(struct ConnectionMessage *connection_message, const int message_type, const int version)
+{
+    connection_message->message_type = (uint8_t)message_type;
+    connection_message->version      = (uint8_t)version;
+}
+
+void serialize_and_send_connection_message(const int serverfd, const struct ConnectionMessage *connection_message, int *err)
+{
+    uint8_t *buffer;
+    // 1 byte for message_type, 1 byte for version
+    size_t size = 2;
+    buffer      = (uint8_t *)malloc(2 * sizeof(uint8_t));
+    if(buffer == NULL)
+    {
+        *err = errno;
+        perror("malloc");
+        return;
+    }
+
+    // Assign first byte to message type
+    buffer[0] = connection_message->message_type;
+    // Assign second byte to version
+    buffer[1] = connection_message->version;
+
+    // Send the packet
+    send_packet(serverfd, buffer, size);
+
+    free(buffer);
 }

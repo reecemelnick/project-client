@@ -13,6 +13,7 @@ void    set_packet_type(int form_type, uint8_t *type);
 bool    handle_login_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err);
 bool    handle_create_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err);
 
+// assign packet type depending on login or create
 void set_packet_type(int form_type, uint8_t *type)
 {
     if(form_type == 1)
@@ -29,6 +30,7 @@ void set_packet_type(int form_type, uint8_t *type)
     }
 }
 
+// handle login response packet
 bool handle_login_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err)
 {
     if(incoming_message.packet_type == SYS_Error)
@@ -54,6 +56,7 @@ bool handle_login_res(struct Message incoming_message, const uint8_t *incoming_s
     return false;
 }
 
+// handle create account response packet
 bool handle_create_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err)
 {
     if(incoming_message.packet_type == SYS_Error)
@@ -77,6 +80,7 @@ bool handle_create_res(struct Message incoming_message, const uint8_t *incoming_
     return false;
 }
 
+// prepare the request header for login and create request
 uint8_t make_login_create_req(struct Message *header, struct ACC_Create_Login request, int form_type)
 {
     uint8_t  type;
@@ -101,6 +105,7 @@ uint8_t make_login_create_req(struct Message *header, struct ACC_Create_Login re
     return type;
 }
 
+// loop for handling login or create account requests
 int login_or_create(struct Message request_header, int sockfd, int form_type, int *err)
 {
     struct ACC_Create_Login acc_create_login;    // struct to form account create or login request
