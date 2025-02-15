@@ -8,8 +8,10 @@
 #include <ncurses.h>
 
 int     login_or_create(struct Message request_header, int sockfd, int form_type, int *err);
-uint8_t populate_header(struct Message *header, struct ACC_Create_Login request, int form_type);
+uint8_t make_login_create_req(struct Message *header, struct ACC_Create_Login request, int form_type);
 void    set_packet_type(int form_type, uint8_t *type);
+bool    handle_login_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err);
+bool    handle_create_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err);
 
 void set_packet_type(int form_type, uint8_t *type)
 {
@@ -27,7 +29,55 @@ void set_packet_type(int form_type, uint8_t *type)
     }
 }
 
-uint8_t populate_header(struct Message *header, struct ACC_Create_Login request, int form_type)
+bool handle_login_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err)
+{
+    if(incoming_message.packet_type == SYS_Error)
+    {
+        uint8_t *error_message;    // buffer to hold the error message send from the server
+        uint8_t *error_code;       // error code of response
+        parse_and_extract_message(incoming_stream, &error_message, ERROR_MESSSAGE_INDEX, (size_t)incoming_message.payload_len - ERROR_CODE_ENCODED, err);
+
+        error_code = get_error_code(incoming_stream, 1);
+
+        display_error_message(error_message, error_code, (size_t)incoming_message.payload_len - 3, 1);
+
+        free(error_message);
+        free(error_code);
+    }
+    else if(incoming_message.packet_type == LOGIN_SUCCESS)
+    {
+        get_user_id(incoming_stream, &incoming_message.sender_id);
+        start_chat_screen(incoming_message.sender_id);
+        return true;
+    }
+
+    return false;
+}
+
+bool handle_create_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err)
+{
+    if(incoming_message.packet_type == SYS_Error)
+    {
+        uint8_t *error_message;    // buffer to hold the error message send from the server
+        uint8_t *error_code;       // error code of response
+        parse_and_extract_message(incoming_stream, &error_message, ERROR_MESSSAGE_INDEX, (size_t)incoming_message.payload_len - ERROR_CODE_ENCODED, err);
+
+        error_code = get_error_code(incoming_stream, 1);
+
+        display_error_message(error_message, error_code, (size_t)incoming_message.payload_len - ERROR_CODE_ENCODED, 1);
+
+        free(error_message);
+        free(error_code);
+    }
+    else if(incoming_message.packet_type == SYS_Success)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+uint8_t make_login_create_req(struct Message *header, struct ACC_Create_Login request, int form_type)
 {
     uint8_t  type;
     uint8_t  version;
@@ -56,15 +106,11 @@ int login_or_create(struct Message request_header, int sockfd, int form_type, in
     struct ACC_Create_Login acc_create_login;    // struct to form account create or login request
     uint8_t                *incoming_stream;     // buffer to hold the request read from the server
     size_t                  input_size;          // size of the request packet that was read
-    uint8_t                *error_message;       // buffer to hold the error message send from the server
-    uint8_t                *error_code;          // the errorcode recieved from the server
     struct Message          incoming_message;    // struct to store the response header info
-
-    bool success = false;
-
-    acc_create_login.message  = &request_header;
-    acc_create_login.username = NULL;
-    acc_create_login.password = NULL;
+    bool                    success = false;
+    acc_create_login.message        = &request_header;
+    acc_create_login.username       = NULL;
+    acc_create_login.password       = NULL;
 
     while(!success)
     {
@@ -79,7 +125,7 @@ int login_or_create(struct Message request_header, int sockfd, int form_type, in
             return -1;
         }
 
-        type = populate_header(&request_header, acc_create_login, form_type);
+        type = make_login_create_req(&request_header, acc_create_login, form_type);
 
         // send packet that either represents account_create or login
         send_and_serialize_ACC_Create_Login(sockfd, &acc_create_login);
@@ -93,41 +139,11 @@ int login_or_create(struct Message request_header, int sockfd, int form_type, in
 
         if(type == LOGIN_REQUEST)
         {
-            if(incoming_message.packet_type == SYS_Error)
-            {
-                parse_and_extract_message(incoming_stream, &error_message, ERROR_MESSSAGE_INDEX, (size_t)incoming_message.payload_len - ERROR_CODE_ENCODED, err);
-
-                error_code = get_error_code(incoming_stream, 1);
-
-                display_error_message(error_message, error_code, (size_t)incoming_message.payload_len - 3, 1);
-
-                free(error_message);
-                free(error_code);
-            }
-            else if(incoming_message.packet_type == LOGIN_SUCCESS)
-            {
-                get_user_id(incoming_stream, &incoming_message.sender_id);
-                start_chat_screen(incoming_message.sender_id);
-                success = true;
-            }
+            success = handle_login_res(incoming_message, incoming_stream, err);
         }
         else if(type == ACCOUNT_CREATE)
         {
-            if(incoming_message.packet_type == SYS_Error)
-            {
-                parse_and_extract_message(incoming_stream, &error_message, ERROR_MESSSAGE_INDEX, (size_t)incoming_message.payload_len - ERROR_CODE_ENCODED, err);
-
-                error_code = get_error_code(incoming_stream, 1);
-
-                display_error_message(error_message, error_code, (size_t)incoming_message.payload_len - ERROR_CODE_ENCODED, 1);
-
-                free(error_message);
-                free(error_code);
-            }
-            else if(incoming_message.packet_type == SYS_Success)
-            {
-                success = true;
-            }
+            success = handle_create_res(incoming_message, incoming_stream, err);
         }
 
         free_acc_create(&acc_create_login);
