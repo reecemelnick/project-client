@@ -15,6 +15,7 @@
 #define HEADER_SIZE 6
 #define TIMEOUT 100000
 #define PACKETLEN 777
+#define IDINDEX 2
 
 void construct_message(struct Message *header, uint8_t type, uint8_t version, uint16_t id, uint16_t length)
 {
@@ -181,24 +182,11 @@ void read_entire_stream(const int serverfd, uint8_t **bytestream, size_t *size, 
     printf("Done reading\n");
 }
 
-uint16_t *get_user_id(const uint8_t *byte_stream)
+void get_user_id(const uint8_t *byte_stream, uint16_t *user_id)
 {
-    size_t    size     = 2;
-    size_t    position = HEADER_SIZE + size;
-    uint16_t *user_id;
-
-    user_id = (uint16_t *)malloc(sizeof(uint16_t));
-    if(!user_id)
-    {
-        perror("malloc");
-        exit(EXIT_FAILURE);
-    }
-
-    memcpy(user_id, byte_stream + position, size);
+    memcpy(user_id, byte_stream + IDINDEX, 2);    // NOLINT
 
     *user_id = ntohs(*user_id);
-
-    return user_id;
 }
 
 uint8_t *get_error_code(const uint8_t *byte_stream, size_t size)
@@ -214,24 +202,22 @@ uint8_t *get_error_code(const uint8_t *byte_stream, size_t size)
     }
 
     memcpy(err_code, byte_stream + position, size);
-
     return err_code;
 }
 
-uint8_t *parse_and_extract_message(const uint8_t *byte_stream, size_t offset, size_t message_length, int *err)
+void parse_and_extract_message(const uint8_t *byte_stream, uint8_t **message, size_t offset, size_t message_length, int *err)
 {
     // allocate memory
-    uint8_t *message = (uint8_t *)malloc(message_length * sizeof(uint8_t));
-    if(message == NULL)
+    *message = (uint8_t *)malloc(message_length * sizeof(uint8_t));
+    if(*message == NULL)
     {
         perror("malloc");
         *err = errno;
-        return NULL;
+        return;
     }
 
     // create a copy of byte_stream to work with, starting from offset
-    memcpy(message, byte_stream + offset, message_length);
-    return message;
+    memcpy(*message, byte_stream + offset, message_length);
 }
 
 uint8_t *parse_and_extract_payload_value(const uint8_t *byte_stream, size_t payload_value_size)

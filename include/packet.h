@@ -18,10 +18,10 @@ uint16_t extract_next_twobytes(const uint8_t *byte_stream, size_t *position);
 
 int set_fd_non_blocking(int fd);
 
-uint8_t *parse_and_extract_message(const uint8_t *byte_stream, size_t offset, size_t message_length, int *err);
+void parse_and_extract_message(const uint8_t *byte_stream, uint8_t **message, size_t offset, size_t message_length, int *err);
 
 uint8_t *parse_and_extract_payload_value(const uint8_t *byte_stream, size_t payload_value_size);
 
 uint8_t *get_error_code(const uint8_t *byte_stream, size_t size);
 
-uint16_t *get_user_id(const uint8_t *byte_stream);
+void get_user_id(const uint8_t *byte_stream, uint16_t *user_id);

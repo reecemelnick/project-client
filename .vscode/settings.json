@@ -17,6 +17,8 @@
         "complex": "c",
         "functional": "c",
         "utility": "c",
-        "system_error": "c"
+        "system_error": "c",
+        "messages.h": "c",
+        "chrono": "c"
     }
 }
