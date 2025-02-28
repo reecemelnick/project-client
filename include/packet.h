@@ -5,8 +5,8 @@ void serialize_message(const struct Message *header, uint8_t username, uint8_t p
 void send_and_serialize_ACC_Create_Login(int serverfd, const struct ACC_Create_Login *packet);
 void send_packet(int serverfd, const uint8_t *buffer, size_t size);
 
-void construct_connection_message(struct ConnectionMessage *connection_message, int message_type, int version);
-void serialize_and_send_connection_message(int serverfd, const struct ConnectionMessage *connection_message, int *err);
+void construct_connection_message(struct ConnectionMessage *connection_message, uint8_t message_type, uint8_t version, uint8_t server_online, uint8_t *active_server_ip);
+void send_and_serialize_connection_message(int server_manager_fd, const struct ConnectionMessage *connection_message);
 
 void send_packet_t(const uint8_t *buffer, size_t packet_size);
 

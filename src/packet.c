@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #define HEADER_SIZE 6
+#define CONNECTION_MSG_LEN 2
 #define TIMEOUT 100000
 #define PACKETLEN 777
 #define IDINDEX 2
@@ -300,32 +301,35 @@ int set_fd_non_blocking(int fd)
     return 0;
 }
 
-void construct_connection_message(struct ConnectionMessage *connection_message, const int message_type, const int version)
+void construct_connection_message(struct ConnectionMessage *connection_message, uint8_t message_type, uint8_t version, uint8_t server_online, uint8_t *active_server_ip)
 {
-    connection_message->message_type = (uint8_t)message_type;
-    connection_message->version      = (uint8_t)version;
+    connection_message->message_type     = message_type;
+    connection_message->version          = version;
+    connection_message->server_online    = server_online;
+    connection_message->active_server_ip = active_server_ip;
 }
 
-void serialize_and_send_connection_message(const int serverfd, const struct ConnectionMessage *connection_message, int *err)
+/*
+    Sends a connection request to the server manager
+*/
+void send_and_serialize_connection_message(const int server_manager_fd, const struct ConnectionMessage *connection_message)
 {
-    uint8_t *buffer;
+    size_t packet_size;
+
+    uint8_t buffer[CONNECTION_MSG_LEN];
     // 1 byte for message_type, 1 byte for version
-    size_t size = 2;
-    buffer      = (uint8_t *)malloc(2 * sizeof(uint8_t));
-    if(buffer == NULL)
-    {
-        *err = errno;
-        perror("malloc");
-        return;
-    }
+    packet_size = (size_t)CONNECTION_MSG_LEN;
 
     // Assign first byte to message type
     buffer[0] = connection_message->message_type;
     // Assign second byte to version
     buffer[1] = connection_message->version;
 
-    // Send the packet
-    send_packet(serverfd, buffer, size);
+    printf("Sending packet of size %zu to server manager fd %d\n", packet_size, server_manager_fd);
 
-    free(buffer);
+    // printing packet
+    send_packet_t(buffer, packet_size);
+
+    // send the buffer
+    // send_packet(server_manager_fd, buffer, packet_size); // TODO: uncomment this line
 }

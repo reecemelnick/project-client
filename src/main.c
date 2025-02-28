@@ -13,6 +13,11 @@ void    set_packet_type(int form_type, uint8_t *type);
 bool    handle_login_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err);
 bool    handle_create_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err);
 
+// Client-ServerManager functions
+void make_ip_req(struct ConnectionMessage *connection_message);
+
+// end Client-ServerManager functions
+
 // assign packet type depending on login or create
 void set_packet_type(int form_type, uint8_t *type)
 {
@@ -158,12 +163,25 @@ int login_or_create(struct Message request_header, int sockfd, int form_type, in
     return *err;
 }
 
+void make_ip_req(struct ConnectionMessage *connection_message)
+{
+    uint8_t message_type;
+    uint8_t version;
+
+    message_type = 0x01;
+    version      = 0x01;
+
+    // Set packet type to 0x01 (CLIENT_GetIp) and version to 0x01
+    construct_connection_message(connection_message, message_type, version, 0x00, 0x00);
+}
+
 int main(int argc, char *argv[])
 {
-    struct socket_network net_socket;              // network socket info
-    struct Message        request_header = {0};    // struct to form request header
-    int                   err            = 0;
-    int                   res;
+    struct socket_network    net_socket;                  // network socket info
+    struct Message           request_header     = {0};    // struct to form request header
+    struct ConnectionMessage connection_message = {0};
+    int                      err                = 0;
+    int                      res;
 
     // connection_message.active_server_ip = NULL;
 
@@ -193,6 +211,15 @@ int main(int argc, char *argv[])
     {
         goto cleanup;
     }
+
+    // client-sm communication
+    make_ip_req(&connection_message);
+
+    // send active server ip request
+    send_and_serialize_connection_message(net_socket.sockfd, &connection_message);
+
+    // TODO: read ip from server manager socket
+
     // end socket connect
 
     res = display_menu();
