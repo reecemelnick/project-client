@@ -68,7 +68,7 @@ void setup_network_address(struct socket_network *net_socket, int *err)
 
         net_socket->addr.ss_family = AF_INET;
         ipv4_addr                  = (struct sockaddr_in *)(&(net_socket->addr));
-        ipv4_addr->sin_port        = htons(PORT);
+        ipv4_addr->sin_port        = htons(net_socket->port);
         net_socket->addr_len       = sizeof(*ipv4_addr);
     }
     else if(inet_pton(AF_INET6, net_socket->address, &(((struct sockaddr_in6 *)(&(net_socket->addr)))->sin6_addr)) == 1)
@@ -77,7 +77,7 @@ void setup_network_address(struct socket_network *net_socket, int *err)
 
         net_socket->addr.ss_family = AF_INET6;
         ipv6_addr                  = (struct sockaddr_in6 *)(&(net_socket->addr));
-        ipv6_addr->sin6_port       = htons(PORT);
+        ipv6_addr->sin6_port       = htons(net_socket->port);
         net_socket->addr_len       = sizeof(*ipv6_addr);
     }
     else
@@ -101,5 +101,28 @@ void socket_close(int sockfd)
     if(close(sockfd) != 0)
     {
         perror("Error closing socket");
+    }
+}
+
+void setup_socket(struct socket_network *net_socket, int *err)
+{
+    socket_create(net_socket, err);
+    if(*err != 0)
+    {
+        return;
+    }
+
+    setup_network_address(net_socket, err);
+    if(*err != 0)
+    {
+        return;
+    }
+    // end socket initialization
+
+    // socket connect
+    socket_connect(net_socket->sockfd, (struct sockaddr *)(&(net_socket->addr)), net_socket->addr_len, err);
+    if(*err != 0)
+    {
+        return;
     }
 }

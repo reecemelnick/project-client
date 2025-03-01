@@ -14,7 +14,7 @@ bool    handle_login_res(struct Message incoming_message, const uint8_t *incomin
 bool    handle_create_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err);
 
 // Client-ServerManager functions
-void make_ip_req(struct ConnectionMessage *connection_message);
+void make_ip_req(int server_manager_fd, struct ConnectionMessage *connection_message, int *err);
 
 // end Client-ServerManager functions
 
@@ -164,15 +164,18 @@ int login_or_create(struct Message request_header, int sockfd, int form_type, in
     return *err;
 }
 
-void make_ip_req(struct ConnectionMessage *connection_message)
+void make_ip_req(const int server_manager_fd, struct ConnectionMessage *connection_message, int *err)
 {
-    uint8_t message_type;
-    uint8_t version;
+    size_t       stream_size;
+    uint8_t      message_type;
+    uint8_t      version;
+    uint8_t     *incoming_stream;
+    size_t       payload_len;
+    const size_t payload_index = 5;
 
-    message_type = 0x01;
+    message_type = 0x00;
     version      = 0x01;
 
-    // Set packet type to 0x01 (CLIENT_GetIp) and version to 0x01
     construct_connection_message(connection_message, message_type, version, 0x00, 0x00);
 }
 
@@ -180,12 +183,12 @@ void make_ip_req(struct ConnectionMessage *connection_message)
 // remember to also change port in network_utils.h accordingly to the server port
 int main(int argc, char *argv[])
 {
-    struct socket_network net_socket;    // network socket info
-    // struct user           current_user;            // struct that contains user information
-    struct Message request_header = {0};    // struct to form request header
-    // struct ConnectionMessage connection_message = {0};
-    int err = 0;
-    int res;
+    struct socket_network    net_socket;    // network socket info
+    int                      res;
+    struct Message           request_header     = {0};    // struct to form request header
+    struct ConnectionMessage connection_message = {0};
+    int                      err                = 0;
+    net_socket.port                             = PORT;
 
     // connection_message.active_server_ip = NULL;
 
@@ -196,35 +199,30 @@ int main(int argc, char *argv[])
     }
 
     // socket initialization
-    socket_create(&net_socket, &err);
-    if(err != 0)
-    {
-        goto done;
-    }
-
-    setup_network_address(&net_socket, &err);
+    setup_socket(&net_socket, &err);
+    net_socket.address = NULL;
     if(err != 0)
     {
         goto cleanup;
     }
-    // end socket initialization
-
-    // socket connect
-    socket_connect(net_socket.sockfd, (struct sockaddr *)(&(net_socket.addr)), net_socket.addr_len, &err);
-    if(err != 0)
-    {
-        goto cleanup;
-    }
-
     // client-sm communication
-    // make_ip_req(&connection_message);
-
-    // send active server ip request
-    // send_and_serialize_connection_message(net_socket.sockfd, &connection_message);
-
-    // TODO: read ip from server manager socket
-
-    // end socket connect
+    make_ip_req(net_socket.sockfd, &connection_message, &err);
+    if(err != 0 || connection_message.server_online == 0)
+    {
+        printf("No active server.\n");
+        goto cleanup;
+    }
+    close(net_socket.sockfd);
+    // end connection with server manager
+    // TODO: connect to server ip from server manager socket
+    // net_socket.address = (char *)connection_message.active_server_ip; // uncomment this line
+    net_socket.address = strdup("127.0.0.2");    // hardcoded server ip
+    net_socket.port    = SERVER_PORT;
+    setup_socket(&net_socket, &err);
+    if(err != 0)
+    {
+        goto cleanup;
+    }
 
     res = display_menu();
 
@@ -236,6 +234,13 @@ int main(int argc, char *argv[])
 
     printf("client ran successfully\n");
 cleanup:
+    free(connection_message.active_server_ip);
+    if(net_socket.address != NULL)
+    {
+        free(net_socket.address);
+        net_socket.address = NULL;
+    }
+    socket_close(net_socket.sockfd);
     close(net_socket.sockfd);
 done:
     return 0;

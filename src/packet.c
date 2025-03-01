@@ -194,16 +194,16 @@ uint8_t *get_error_code(const uint8_t *byte_stream, size_t size)
 void parse_and_extract_message(const uint8_t *byte_stream, uint8_t **message, size_t offset, size_t message_length, int *err)
 {
     // allocate memory
-    *message = (uint8_t *)malloc(message_length * sizeof(uint8_t));
+    *message = (uint8_t *)malloc((message_length + 1) * sizeof(uint8_t));
     if(*message == NULL)
     {
         perror("malloc");
         *err = errno;
         return;
     }
-
     // create a copy of byte_stream to work with, starting from offset
     memcpy(*message, byte_stream + offset, message_length);
+    (*message)[message_length] = '\0';
 }
 
 uint8_t *parse_and_extract_payload_value(const uint8_t *byte_stream, size_t payload_value_size)
@@ -336,7 +336,30 @@ void send_and_serialize_connection_message(const int server_manager_fd, const st
     send_packet_t(buffer, packet_size);
 
     // send the buffer
-    // send_packet(server_manager_fd, buffer, packet_size); // TODO: uncomment this line
+    send_packet(server_manager_fd, buffer, packet_size);    // TODO: uncomment this line
+}
+
+/*
+    Decodes response from server manager, validates if there is an available server
+*/
+void parse_connection_message_header(const uint8_t *byte_stream, struct ConnectionMessage *incoming_message)
+{
+    uint8_t message_type;
+    uint8_t version;
+    uint8_t server_online;
+    size_t  position;
+
+    position = 0;
+
+    message_type                   = byte_stream[position++];
+    incoming_message->message_type = message_type;
+
+    version                   = byte_stream[position++];
+    incoming_message->version = version;
+
+    server_online                   = byte_stream[position];
+    incoming_message->server_online = server_online;
+    // TODO: check if no active servers main
 }
 
 // ------------------------- messaging functions -------------------------

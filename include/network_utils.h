@@ -11,7 +11,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define PORT 8000
+#define PORT 8080
+#define SERVER_PORT 9000
 
 struct socket_network
 {
@@ -23,6 +24,8 @@ struct socket_network
     struct sockaddr_storage addr;
     // cppcheck-suppress unusedStructMember
     socklen_t addr_len;
+    // cppcheck-suppress unusedStructMember
+    uint16_t port;
 };
 
 void setup_signal(void (*handler)(int), int *err);
@@ -38,5 +41,7 @@ void setup_network_address(struct socket_network *net_socket, int *err);
 void socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addr_len, int *err);
 
 void socket_close(int sockfd);
+
+void setup_socket(struct socket_network *net_socket, int *err);
 
 #endif    // NETWORK_UTILS_H
