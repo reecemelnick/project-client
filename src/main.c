@@ -177,10 +177,35 @@ void make_ip_req(const int server_manager_fd, struct ConnectionMessage *connecti
     version      = 0x01;
 
     construct_connection_message(connection_message, message_type, version, 0x00, 0x00);
+
+    send_and_serialize_connection_message(server_manager_fd, connection_message);
+
+    read_entire_stream(server_manager_fd, &incoming_stream, &stream_size, err);
+    if(*err != 0)
+    {
+        goto cleanup;
+    }
+
+    printf("Retrieved packet of size %zu\n", stream_size);
+    send_packet_t(incoming_stream, stream_size);
+
+    parse_connection_message_header(incoming_stream, connection_message);
+    if(connection_message->server_online != 0)
+    {
+        payload_len = (size_t)incoming_stream[payload_index - 1];
+        parse_and_extract_message(incoming_stream, &(connection_message->active_server_ip), payload_index, payload_len - 1, err);
+
+        printf("\npayload length: %zu\n", payload_len);
+        send_packet_t(connection_message->active_server_ip, payload_len - 1);
+    }
+
+cleanup:
+    free(incoming_stream);
 }
 
-// -h <server_ip>
-// remember to also change port in network_utils.h accordingly to the server port
+/*
+    -h server manager ip
+*/
 int main(int argc, char *argv[])
 {
     struct socket_network    net_socket;    // network socket info
@@ -216,7 +241,7 @@ int main(int argc, char *argv[])
     // end connection with server manager
     // TODO: connect to server ip from server manager socket
     // net_socket.address = (char *)connection_message.active_server_ip; // uncomment this line
-    net_socket.address = strdup("127.0.0.2");    // hardcoded server ip
+    net_socket.address = strdup("127.0.0.2");    // TODO: change this to appropriate server ip
     net_socket.port    = SERVER_PORT;
     setup_socket(&net_socket, &err);
     if(err != 0)
