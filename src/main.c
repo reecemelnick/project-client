@@ -202,6 +202,9 @@ cleanup:
     free(incoming_stream);
 }
 
+/*
+    -h server manager ip
+*/
 int main(int argc, char *argv[])
 {
     struct socket_network    net_socket;    // network socket info
@@ -237,7 +240,7 @@ int main(int argc, char *argv[])
     // end connection with server manager
     // TODO: connect to server ip from server manager socket
     // net_socket.address = (char *)connection_message.active_server_ip; // uncomment this line
-    net_socket.address = strdup("127.0.0.2");    // hardcoded server ip
+    net_socket.address = strdup("127.0.0.2");    // TODO: change this to appropriate server ip
     net_socket.port    = SERVER_PORT;
     setup_socket(&net_socket, &err);
     if(err != 0)

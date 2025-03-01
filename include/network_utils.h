@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+// TODO: change these ports accordingly to server/sm if needed
 #define PORT 8080
 #define SERVER_PORT 9000
 
