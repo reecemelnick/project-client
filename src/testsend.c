@@ -5,12 +5,12 @@
 
 #define PACKETLEN 777
 
-void send_user_message(int fd, char *message_buffer, uint8_t type, uint8_t ver, uint16_t id, uint16_t length)
+void send_user_message(int fd, const char *message_buffer, uint8_t type, uint8_t ver, uint16_t id, uint16_t length)
 {
-    uint8_t buffer[PACKETLEN];
+    uint8_t  buffer[PACKETLEN];
     uint16_t sender_id_n;
     uint16_t payload_n;
-    int pos;
+    int      pos;
 
     pos = 0;
 
@@ -25,24 +25,20 @@ void send_user_message(int fd, char *message_buffer, uint8_t type, uint8_t ver, 
     // assign id
     sender_id_n = htons(id);
     memcpy(buffer + pos, &sender_id_n, sizeof(uint16_t));
-    pos += (int) sizeof(uint16_t);
+    pos += (int)sizeof(uint16_t);
 
-    // assign length
+    // assign len
     payload_n = htons(length);
     memcpy(buffer + pos, &payload_n, sizeof(uint16_t));
-    pos += (int) sizeof(uint16_t);
+    pos += (int)sizeof(uint16_t);
 
-    // assign payload
-    strcat((char *)(buffer + pos), message_buffer);
+    strlcat((char *)(buffer + pos), message_buffer, PACKETLEN - (size_t)pos);
 
-    printf("Buffer content (hex): ");
-    for (int i = 0; i < pos + length + 1; i++) {
-        printf("%02X ", buffer[i]);
-    }
-    printf("\n");
+    // disabled for testing
+    // send_packet(fd, buffer, sizeof(buffer));
 
-    // ignoring networking side for this
-    // send_packet(fd, buffer, sizeof(buffer)); 
+    
+    printf("Packet sent with message: %s\n", buffer + pos);
 }
 
 int main() {

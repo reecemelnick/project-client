@@ -340,7 +340,7 @@ void send_and_serialize_connection_message(const int server_manager_fd, const st
 
 /*
     reads a message into the passed in message buffer
-    
+
     NOTE: written assuming that we know that a chat message is incomming and we know the protocol
 */
 void read_user_message(uint8_t **byte_stream, char *message_buffer)
@@ -369,16 +369,16 @@ void read_user_message(uint8_t **byte_stream, char *message_buffer)
 }
 
 /*
-    sends a message by constructing it first 
+    sends a message by constructing it first
 
     NOTE: this requires all header contents to be passed in, we should probably make a struct?
 */
-void send_user_message(int fd, char *message_buffer, uint8_t type, uint8_t ver, uint16_t id, uint16_t length)
+void send_user_message(int fd, const char *message_buffer, uint8_t type, uint8_t ver, uint16_t id, uint16_t length)
 {
-    uint8_t buffer[PACKETLEN];
+    uint8_t  buffer[PACKETLEN];
     uint16_t sender_id_n;
     uint16_t payload_n;
-    int pos;
+    int      pos;
 
     pos = 0;
 
@@ -393,15 +393,15 @@ void send_user_message(int fd, char *message_buffer, uint8_t type, uint8_t ver, 
     // assign id
     sender_id_n = htons(id);
     memcpy(buffer + pos, &sender_id_n, sizeof(uint16_t));
-    pos += (int) sizeof(uint16_t);
+    pos += (int)sizeof(uint16_t);
 
     // assign len
-    payload_n = htons(id);
-    memcpy(buffer + pos, &length, sizeof(uint16_t));
-    pos += (int) sizeof(uint16_t);
+    payload_n = htons(length);
+    memcpy(buffer + pos, &payload_n, sizeof(uint16_t));
+    pos += (int)sizeof(uint16_t);
 
     // assign payload
-    strcat(buffer + pos, message_buffer);
+    strlcat((char *)(buffer + pos), message_buffer, PACKETLEN - (size_t)pos);
 
     // sends packet at the end
     send_packet(fd, buffer, sizeof(buffer));
