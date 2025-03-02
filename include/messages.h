@@ -68,7 +68,9 @@ enum packet_types {
     SYS_Error = 1,
     LOGIN_REQUEST = 10,
     LOGIN_SUCCESS = 11,
-    ACCOUNT_CREATE = 13
+    ACCOUNT_CREATE = 13,
+    CHT_Send = 20,
+    CHT_Received = 21
 };
 
 #endif    // MESSAGES_H

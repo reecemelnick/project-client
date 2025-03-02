@@ -25,3 +25,7 @@ uint8_t *parse_and_extract_payload_value(const uint8_t *byte_stream, size_t payl
 uint8_t *get_error_code(const uint8_t *byte_stream, size_t size);
 
 void get_user_id(const uint8_t *byte_stream, uint16_t *user_id);
+
+void read_user_message(uint8_t **byte_stream, char *message_buffer);
+
+void send_user_message(int fd, char *message_buffer, uint8_t type, uint8_t ver, uint16_t id, uint16_t length);
