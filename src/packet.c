@@ -17,6 +17,8 @@
 #define TIMEOUT 100000
 #define PACKETLEN 777
 #define IDINDEX 2
+#define PAYLOADINDEX 6
+#define LENGTHINDEX 4
 
 // populates all the fields of a Message struct
 void construct_message(struct Message *header, uint8_t type, uint8_t version, uint16_t id, uint16_t length)
@@ -333,3 +335,76 @@ void send_and_serialize_connection_message(const int server_manager_fd, const st
     // send the buffer
     // send_packet(server_manager_fd, buffer, packet_size); // TODO: uncomment this line
 }
+
+// ------------------------- messaging functions -------------------------
+
+/*
+    reads a message into the passed in message buffer
+
+    NOTE: written assuming that we know that a chat message is incomming and we know the protocol
+*/
+void read_user_message(uint8_t **byte_stream, char *message_buffer)
+{
+    int      index;
+    int      packet_length;
+    uint16_t packet_length_n;
+
+    index = PAYLOADINDEX;
+
+    // read in the packet length and store
+    memcpy(&packet_length_n, (*byte_stream) + LENGTHINDEX, sizeof(uint16_t));
+    packet_length_n = ntohs(packet_length_n);
+    packet_length   = (int)packet_length_n;
+
+    // read through message and store?? stop at correct length
+    for(int i = 0; i < packet_length; i++)
+    {
+        printf("%d", i);
+        message_buffer[i] = (char)*((*byte_stream) + index + i);
+    }
+
+    // TESTPRINT (it seems works, can be deleted if no longer needed)
+    message_buffer[packet_length] = '\0';
+    printf("\n\nmsg: %s", message_buffer);
+}
+
+/*
+    sends a message by constructing it first
+
+    NOTE: this requires all header contents to be passed in, we should probably make a struct?
+*/
+void send_user_message(int fd, const char *message_buffer, uint8_t type, uint8_t ver, uint16_t id, uint16_t length)
+{
+    uint8_t  buffer[PACKETLEN];
+    uint16_t sender_id_n;
+    uint16_t payload_n;
+    int      pos;
+
+    pos = 0;
+
+    // assign type
+    buffer[pos] = type;
+    pos++;
+
+    // assign version
+    buffer[pos] = ver;
+    pos++;
+
+    // assign id
+    sender_id_n = htons(id);
+    memcpy(buffer + pos, &sender_id_n, sizeof(uint16_t));
+    pos += (int)sizeof(uint16_t);
+
+    // assign len
+    payload_n = htons(length);
+    memcpy(buffer + pos, &payload_n, sizeof(uint16_t));
+    pos += (int)sizeof(uint16_t);
+
+    // assign payload
+    strlcat((char *)(buffer + pos), message_buffer, PACKETLEN - (size_t)pos);
+
+    // sends packet at the end
+    send_packet(fd, buffer, sizeof(buffer));
+}
+
+// --------------------------------- end ---------------------------------
