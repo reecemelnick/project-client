@@ -175,13 +175,15 @@ void make_ip_req(struct ConnectionMessage *connection_message)
     construct_connection_message(connection_message, message_type, version, 0x00, 0x00);
 }
 
+// -h <server_ip>
+// remember to also change port in network_utils.h accordingly to the server port
 int main(int argc, char *argv[])
 {
-    struct socket_network    net_socket;                  // network socket info
-    struct Message           request_header     = {0};    // struct to form request header
-    struct ConnectionMessage connection_message = {0};
-    int                      err                = 0;
-    int                      res;
+    struct socket_network net_socket;              // network socket info
+    struct Message        request_header = {0};    // struct to form request header
+    // struct ConnectionMessage connection_message = {0};
+    int err = 0;
+    int res;
 
     // connection_message.active_server_ip = NULL;
 
@@ -213,10 +215,10 @@ int main(int argc, char *argv[])
     }
 
     // client-sm communication
-    make_ip_req(&connection_message);
+    // make_ip_req(&connection_message);
 
     // send active server ip request
-    send_and_serialize_connection_message(net_socket.sockfd, &connection_message);
+    // send_and_serialize_connection_message(net_socket.sockfd, &connection_message);
 
     // TODO: read ip from server manager socket
 
@@ -232,7 +234,7 @@ int main(int argc, char *argv[])
 
     printf("client ran successfully\n");
 cleanup:
-    socket_close(net_socket.sockfd);
+    close(net_socket.sockfd);
 done:
     return 0;
 }
