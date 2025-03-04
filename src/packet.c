@@ -340,7 +340,7 @@ void send_and_serialize_connection_message(const int server_manager_fd, const st
 }
 
 /*
-    Decodes response from server manager, validates if there is an available server
+    Decodes response from server manager
 */
 void parse_connection_message_header(const uint8_t *byte_stream, struct ConnectionMessage *incoming_message)
 {

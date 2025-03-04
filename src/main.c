@@ -223,26 +223,33 @@ int main(int argc, char *argv[])
         goto done;
     }
 
-    // socket initialization
+    // socket initialization (sm)
     setup_socket(&net_socket, &err);
-    net_socket.address = NULL;
     if(err != 0)
     {
         goto cleanup;
     }
+
+    net_socket.address = NULL; // set to null, unneeded
     // client-sm communication
+
+    // send active server ip request
     make_ip_req(net_socket.sockfd, &connection_message, &err);
     if(err != 0 || connection_message.server_online == 0)
     {
         printf("No active server.\n");
         goto cleanup;
     }
+
     close(net_socket.sockfd);
-    // end connection with server manager
-    // TODO: connect to server ip from server manager socket
+    // end connection with sm
+
+    // TODO: must connect to server ip and port provided from sm
     // net_socket.address = (char *)connection_message.active_server_ip; // uncomment this line
     net_socket.address = strdup("127.0.0.2");    // TODO: change this to appropriate server ip
-    net_socket.port    = SERVER_PORT;
+    net_socket.port    = SERVER_PORT; 
+
+    // socket initialization (server)
     setup_socket(&net_socket, &err);
     if(err != 0)
     {
