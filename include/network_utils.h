@@ -13,7 +13,7 @@
 
 // TODO: change these ports accordingly to server/sm if needed
 #define PORT 8080
-#define SERVER_PORT 9000 // temporary, sm does not send back ip and port currently
+#define SERVER_PORT 9000    // temporary, sm does not send back ip and port currently
 
 struct socket_network
 {
