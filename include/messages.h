@@ -36,6 +36,17 @@ struct Message {
     uint16_t payload_len;
 };
 
+struct chat_message {
+    // cppcheck-suppress unusedStructMember
+    struct Message *message;
+    // cppcheck-suppress unusedStructMember
+    uint8_t *timestamp;
+    // cppcheck-suppress unusedStructMember
+    uint8_t *chat_message;
+    // cppcheck-suppress unusedStructMember
+    uint8_t *username;
+};
+
 struct ACC_Create_Login {
     // cppcheck-suppress unusedStructMember
     struct Message *message;
@@ -43,6 +54,11 @@ struct ACC_Create_Login {
     uint8_t *username;
     // cppcheck-suppress unusedStructMember
     uint8_t *password;
+};
+
+struct user {
+    // cppcheck-suppress unusedStructMember
+    uint8_t username;
 };
 
 // end Message Protocol

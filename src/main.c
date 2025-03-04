@@ -10,7 +10,7 @@
 int     login_or_create(struct Message request_header, int sockfd, int form_type, int *err);
 uint8_t make_login_create_req(struct Message *header, struct ACC_Create_Login request, int form_type);
 void    set_packet_type(int form_type, uint8_t *type);
-bool    handle_login_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err);
+bool    handle_login_res(struct Message incoming_message, const uint8_t *incoming_stream, uint8_t *username, int sockfd, int *err);
 bool    handle_create_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err);
 
 // Client-ServerManager functions
@@ -36,7 +36,7 @@ void set_packet_type(int form_type, uint8_t *type)
 }
 
 // handle login response packet
-bool handle_login_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err)
+bool handle_login_res(struct Message incoming_message, const uint8_t *incoming_stream, uint8_t *username, int sockfd, int *err)
 {
     if(incoming_message.packet_type == SYS_Error)
     {
@@ -54,7 +54,8 @@ bool handle_login_res(struct Message incoming_message, const uint8_t *incoming_s
     else if(incoming_message.packet_type == LOGIN_SUCCESS)
     {
         get_user_id(incoming_stream, &incoming_message.sender_id);
-        start_chat_screen(incoming_message.sender_id);
+        printf("user idddd: %d\n", incoming_message.sender_id);
+        start_chat_screen(incoming_message.sender_id, username, sockfd);
         return true;
     }
 
@@ -149,7 +150,7 @@ int login_or_create(struct Message request_header, int sockfd, int form_type, in
 
         if(type == LOGIN_REQUEST)
         {
-            success = handle_login_res(incoming_message, incoming_stream, err);
+            success = handle_login_res(incoming_message, incoming_stream, acc_create_login.username, sockfd, err);
         }
         else if(type == ACCOUNT_CREATE)
         {
@@ -179,8 +180,9 @@ void make_ip_req(struct ConnectionMessage *connection_message)
 // remember to also change port in network_utils.h accordingly to the server port
 int main(int argc, char *argv[])
 {
-    struct socket_network net_socket;              // network socket info
-    struct Message        request_header = {0};    // struct to form request header
+    struct socket_network net_socket;    // network socket info
+    // struct user           current_user;            // struct that contains user information
+    struct Message request_header = {0};    // struct to form request header
     // struct ConnectionMessage connection_message = {0};
     int err = 0;
     int res;

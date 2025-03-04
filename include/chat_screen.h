@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int  start_chat_screen(uint16_t user_id);
-void users_box(WINDOW *usersWin);
+int  start_chat_screen(uint16_t user_id, uint8_t *username, int sockfd);
+void users_box(WINDOW *usersWin, uint8_t *username);
 void chat_log_box(WINDOW *win);
-void chat_input(WINDOW *win, uint16_t user_id);
+void chat_input(WINDOW *win, uint16_t user_id, uint8_t *username, int sockfd);

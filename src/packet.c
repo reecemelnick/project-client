@@ -16,7 +16,7 @@
 #define CONNECTION_MSG_LEN 2
 #define TIMEOUT 100000
 #define PACKETLEN 777
-#define IDINDEX 2
+#define IDINDEX_LOGIN 8
 #define PAYLOADINDEX 6
 #define LENGTHINDEX 4
 
@@ -165,9 +165,11 @@ void read_entire_stream(const int serverfd, uint8_t **bytestream, size_t *size, 
 // getthe user id from response packet
 void get_user_id(const uint8_t *byte_stream, uint16_t *user_id)
 {
-    memcpy(user_id, byte_stream + IDINDEX, 2);    // NOLINT
+    memcpy(user_id, byte_stream + IDINDEX_LOGIN, 2);    // NOLINT
 
     *user_id = ntohs(*user_id);
+
+    printf("in funct %d\n", *user_id);
 }
 
 // get the error code from the response packet
@@ -373,38 +375,62 @@ void read_user_message(uint8_t **byte_stream, char *message_buffer)
 
     NOTE: this requires all header contents to be passed in, we should probably make a struct?
 */
-void send_user_message(int fd, const char *message_buffer, uint8_t type, uint8_t ver, uint16_t id, uint16_t length)
+void send_user_message(int fd, struct chat_message chat_body, struct Message chat_header)
 {
     uint8_t  buffer[PACKETLEN];
     uint16_t sender_id_n;
     uint16_t payload_n;
     int      pos;
+    size_t   message_len;
+    size_t   timestamp_len;
+    size_t   username_len;
+    uint8_t  tag_value = UTF8STRING;
 
-    pos = 0;
+    pos           = 0;
+    message_len   = strlen((char *)chat_body.chat_message);
+    timestamp_len = strlen((char *)chat_body.timestamp);
+    username_len  = strlen((char *)chat_body.username);
 
-    // assign type
-    buffer[pos] = type;
+    // assign typege
+    buffer[pos] = chat_header.packet_type;
     pos++;
 
     // assign version
-    buffer[pos] = ver;
+    buffer[pos] = chat_header.version;
     pos++;
 
     // assign id
-    sender_id_n = htons(id);
+    sender_id_n = htons(chat_header.sender_id);
     memcpy(buffer + pos, &sender_id_n, sizeof(uint16_t));
     pos += (int)sizeof(uint16_t);
 
     // assign len
-    payload_n = htons(length);
+    payload_n = htons(chat_header.payload_len);
     memcpy(buffer + pos, &payload_n, sizeof(uint16_t));
     pos += (int)sizeof(uint16_t);
 
     // assign payload
-    strlcat((char *)(buffer + pos), message_buffer, PACKETLEN - (size_t)pos);
+    memcpy(buffer + pos, chat_body.timestamp, timestamp_len);
+    pos += (int)timestamp_len;
+
+    memcpy(buffer + pos, &tag_value, 1);
+    pos++;
+    memcpy(buffer + pos, &message_len, 1);
+    pos++;
+    memcpy(buffer + pos, chat_body.chat_message, message_len);
+    pos += (int)message_len;
+
+    memcpy(buffer + pos, &tag_value, 1);
+    pos++;
+    memcpy(buffer + pos, &username_len, 1);
+    pos++;
+    memcpy(buffer + pos, chat_body.username, username_len);
+    pos += (int)username_len;
+
+    // send_packet_t(buffer, (size_t)pos);
 
     // sends packet at the end
-    send_packet(fd, buffer, sizeof(buffer));
+    send_packet(fd, buffer, (size_t)pos);
 }
 
 // --------------------------------- end ---------------------------------
