@@ -191,11 +191,13 @@ void make_ip_req(const int server_manager_fd, struct ConnectionMessage *connecti
     parse_connection_message_header(incoming_stream, connection_message);
     if(connection_message->server_online != 0)
     {
-        payload_len = (size_t)incoming_stream[payload_index - 1];
-        parse_and_extract_message(incoming_stream, &(connection_message->active_server_ip), payload_index, payload_len - 1, err);
+        payload_len = (size_t)incoming_stream[payload_index - 1];    // retrieves the payload length
+        parse_and_extract_message(incoming_stream, &(connection_message->active_server_ip), payload_index, payload_len, err);
 
+        // prints length
         printf("\npayload length: %zu\n", payload_len);
-        send_packet_t(connection_message->active_server_ip, payload_len - 1);
+        // prints server ip
+        send_packet_t(connection_message->active_server_ip, payload_len);
     }
 
 cleanup:
@@ -229,12 +231,16 @@ int main(int argc, char *argv[])
         goto cleanup;
     }
 
-    net_socket.address = NULL; // set to null, unneeded
+    net_socket.address = NULL;    // set to null, unneeded
     // client-sm communication
 
     // send active server ip request
     make_ip_req(net_socket.sockfd, &connection_message, &err);
-    if(err != 0 || connection_message.server_online == 0)
+    if(err != 0)
+    {
+        goto cleanup;
+    }
+    if(connection_message.server_online == 0)
     {
         printf("No active server.\n");
         goto cleanup;
@@ -246,7 +252,7 @@ int main(int argc, char *argv[])
     // TODO: must connect to server ip and port provided from sm
     // net_socket.address = (char *)connection_message.active_server_ip; // uncomment this line
     net_socket.address = strdup("127.0.0.2");    // TODO: change this to appropriate server ip
-    net_socket.port    = SERVER_PORT; 
+    net_socket.port    = SERVER_PORT;
 
     // socket initialization (server)
     setup_socket(&net_socket, &err);
