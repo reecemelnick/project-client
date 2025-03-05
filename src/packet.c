@@ -258,7 +258,7 @@ void parse_response_header(const uint8_t *byte_stream, struct Message *incoming_
     ++position;
 
     version = byte_stream[position];
-    if(version != 1)
+    if(version != 2)
     {
         printf("verion: create and send error packet");
         exit(EXIT_FAILURE);
@@ -345,29 +345,41 @@ void send_and_serialize_connection_message(const int server_manager_fd, const st
 
     NOTE: written assuming that we know that a chat message is incomming and we know the protocol
 */
-void read_user_message(uint8_t **byte_stream, char *message_buffer)
+void read_user_message(const uint8_t *byte_stream, char *message_buffer)
 {
     int      index;
     int      packet_length;
     uint16_t packet_length_n;
-
+    int      file_fd;
     index = PAYLOADINDEX;
 
     // read in the packet length and store
-    memcpy(&packet_length_n, (*byte_stream) + LENGTHINDEX, sizeof(uint16_t));
+    memcpy(&packet_length_n, byte_stream + LENGTHINDEX, sizeof(uint16_t));
     packet_length_n = ntohs(packet_length_n);
     packet_length   = (int)packet_length_n;
+
+    file_fd = open("/Users/reecemelnick/Desktop/packet.txt", O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0644);    // NOLINT
+    if(file_fd < 0)
+    {
+        perror("open failed");
+    }
+
+    printf("packet len: %d\n", (int)packet_length_n);
 
     // read through message and store?? stop at correct length
     for(int i = 0; i < packet_length; i++)
     {
-        printf("%d", i);
-        message_buffer[i] = (char)*((*byte_stream) + index + i);
+        message_buffer[i] = (char)((*byte_stream) + index + i);
     }
+
+    // send_packet_t(byte_stream, packet_length_n);
+
+    write(file_fd, message_buffer, packet_length_n);    // NOLINT
+
+    close(file_fd);
 
     // TESTPRINT (it seems works, can be deleted if no longer needed)
     message_buffer[packet_length] = '\0';
-    printf("\n\nmsg: %s", message_buffer);
 }
 
 /*
