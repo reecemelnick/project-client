@@ -480,4 +480,5 @@ CMakeLists.txt
 
 build/
 
-test.c
+test_broadcast.c
+test_send_chat.c

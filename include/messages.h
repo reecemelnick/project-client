@@ -45,6 +45,17 @@ struct ACC_Create_Login {
     uint8_t *password;
 };
 
+struct CHT_Send {
+    // cppcheck-suppress unusedStructMember
+    struct Message *message;
+    // cppcheck-suppress unusedStructMember
+    uint8_t *timestamp;
+    // cppcheck-suppress unusedStructMember
+    uint8_t *content;
+    // cppcheck-suppress unusedStructMember
+    uint8_t *username;
+};
+
 // end Message Protocol
 // ====================
 typedef enum {
@@ -69,8 +80,7 @@ enum packet_types {
     LOGIN_REQUEST = 10,
     LOGIN_SUCCESS = 11,
     ACCOUNT_CREATE = 13,
-    CHT_Send = 20,
-    CHT_Received = 21
+    CHT_Send = 20
 };
 
 #endif    // MESSAGES_H

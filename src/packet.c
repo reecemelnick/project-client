@@ -368,43 +368,121 @@ void read_user_message(uint8_t **byte_stream, char *message_buffer)
     printf("\n\nmsg: %s", message_buffer);
 }
 
-/*
-    sends a message by constructing it first
+struct CHT_Send *read_chat_broadcast(const uint8_t *byte_stream)
+{
+    struct CHT_Send *incoming_chat;
+    int              pos;
+    uint8_t          length;
 
-    NOTE: this requires all header contents to be passed in, we should probably make a struct?
-*/
-void send_user_message(int fd, const char *message_buffer, uint8_t type, uint8_t ver, uint16_t id, uint16_t length)
+    incoming_chat = (struct CHT_Send *)malloc(sizeof(struct CHT_Send));
+    if(!incoming_chat)
+    {
+        perror("malloc");
+        return NULL;
+    }
+
+    pos                      = HEADER_SIZE + 1;
+    length                   = byte_stream[pos++];
+    incoming_chat->timestamp = (uint8_t *)malloc(length + (size_t)1);
+    if(!incoming_chat->timestamp)
+    {
+        perror("malloc");
+        free(incoming_chat);
+        return NULL;
+    }
+    memcpy(incoming_chat->timestamp, &byte_stream[pos], length);
+    incoming_chat->timestamp[length] = '\0';
+    pos += length + 1;
+
+    length                 = byte_stream[pos++];
+    incoming_chat->content = (uint8_t *)malloc(length + (size_t)1);
+    if(!incoming_chat->content)
+    {
+        perror("malloc");
+        free(incoming_chat->timestamp);
+        free(incoming_chat);
+        return NULL;
+    }
+    memcpy(incoming_chat->content, &byte_stream[pos], length);
+    incoming_chat->content[length] = '\0';
+    pos += length + 1;
+
+    length                  = byte_stream[pos++];
+    incoming_chat->username = (uint8_t *)malloc(length);
+    if(!incoming_chat->username)
+    {
+        perror("malloc");
+        free(incoming_chat->timestamp);
+        free(incoming_chat->content);
+        free(incoming_chat);
+        return NULL;
+    }
+    memcpy(incoming_chat->username, &byte_stream[pos], length);
+    incoming_chat->username[length] = '\0';
+
+    return incoming_chat;
+}
+
+void send_user_message(int fd, struct CHT_Send *cht_packet)
 {
     uint8_t  buffer[PACKETLEN];
+    uint8_t *payload;
     uint16_t sender_id_n;
     uint16_t payload_n;
+    size_t   buffer_size;
     int      pos;
 
     pos = 0;
 
     // assign type
-    buffer[pos] = type;
+    buffer[pos] = cht_packet->message->packet_type;
     pos++;
 
     // assign version
-    buffer[pos] = ver;
+    buffer[pos] = cht_packet->message->version;
     pos++;
 
     // assign id
-    sender_id_n = htons(id);
+    sender_id_n = htons(cht_packet->message->sender_id);
     memcpy(buffer + pos, &sender_id_n, sizeof(uint16_t));
     pos += (int)sizeof(uint16_t);
 
     // assign len
-    payload_n = htons(length);
+    payload_n = htons(cht_packet->message->payload_len);
     memcpy(buffer + pos, &payload_n, sizeof(uint16_t));
     pos += (int)sizeof(uint16_t);
 
     // assign payload
-    strlcat((char *)(buffer + pos), message_buffer, PACKETLEN - (size_t)pos);
+    payload = construct_cht_payload(cht_packet);
+    memcpy(buffer + pos, payload, cht_packet->message->payload_len);
+    free(payload);
+
+    buffer_size = (size_t)HEADER_SIZE + buffer[HEADER_SIZE - 1];
 
     // sends packet at the end
-    send_packet(fd, buffer, sizeof(buffer));
+    send_packet(fd, buffer, buffer_size);
+}
+
+uint8_t *construct_cht_payload(struct CHT_Send *cht_packet)
+{
+    uint8_t *payload;
+
+    size_t timestamp_size = (size_t)cht_packet->timestamp[1] + 2;
+    size_t content_size   = (size_t)cht_packet->content[1] + 2;
+    size_t username_size  = (size_t)cht_packet->username[1] + 2;
+
+    payload = (uint8_t *)malloc(timestamp_size + content_size + username_size);
+    if(payload == NULL)
+    {
+        perror("malloc");
+        return NULL;
+    }
+
+    memcpy(payload, cht_packet->timestamp, timestamp_size);
+    memcpy(payload + (int)timestamp_size, cht_packet->content, content_size);
+    memcpy(payload + (int)timestamp_size + (int)content_size, cht_packet->username, username_size);
+
+    return payload;
 }
 
 // --------------------------------- end ---------------------------------
