@@ -22,7 +22,7 @@ struct thread_args
     int fd;
 };
 
-void                    build_chat_struct(struct Message *new_chat_header, struct chat_message *new_chat_body, uint16_t user_id, const char *message, uint8_t *username);
+void                    build_chat_struct(struct CHT_Send new_chat, uint16_t user_id, const char *message, uint8_t *username);
 void                    generate_timestamp_byte_stream(uint8_t *byte_stream);
 void                   *thread_function(void *arg);
 static pthread_mutex_t *get_ncurses_mutex(void);
@@ -155,7 +155,7 @@ int start_chat_screen(const uint16_t user_id, uint8_t *username, int sockfd)
     return 0;
 }
 
-void build_chat_struct(struct Message *new_chat_header, struct chat_message *new_chat_body, uint16_t user_id, const char *message, uint8_t *username)
+void build_chat_struct(struct CHT_Send new_chat, uint16_t user_id, const char *message, uint8_t *username)
 {
     size_t payload_len = 0;
     size_t message_len = strlen(message);
@@ -164,30 +164,25 @@ void build_chat_struct(struct Message *new_chat_header, struct chat_message *new
     uint8_t timestamp[]   = {0x18, 0x0F, 0x32, 0x30, 0x32, 0x35, 0x30, 0x33, 0x30, 0x34, 0x30, 0x33, 0x30, 0x39, 0x30, 0x36, 0x5a};    // NOLINT
     size_t  timestamp_len = sizeof(timestamp);
 
-    if(new_chat_body->timestamp == NULL)
+    if(new_chat.timestamp == NULL)
     {
-        new_chat_body->timestamp = (uint8_t *)malloc(timestamp_len);
-        if(new_chat_body->timestamp == NULL)
+        new_chat.timestamp = (uint8_t *)malloc(timestamp_len);
+        if(new_chat.timestamp == NULL)
         {
             perror("Failed to allocate memory for timestamp");
             return;
         }
     }
 
-    memcpy(new_chat_body->timestamp, timestamp, timestamp_len);
+    memcpy(new_chat.timestamp, timestamp, timestamp_len);
 
     payload_len += message_len;
     payload_len += timestamp_len;
     payload_len += strlen((char *)username);
 
-    string_to_bytes(message, &new_chat_body->chat_message, message_len, &err);
+    string_to_bytes(message, &new_chat.content, message_len, &err);
 
-    new_chat_header->packet_type = CHT_Send;
-    new_chat_header->version     = 2;    // NOLINT
-    new_chat_header->sender_id   = user_id;
-    new_chat_header->payload_len = (uint16_t)(payload_len + 4);    // NOLINT
-
-    new_chat_body->username = username;
+    new_chat.username = username;
 }
 
 void chat_input(WINDOW *win, const uint16_t user_id, uint8_t *username, int sockfd)
@@ -204,8 +199,9 @@ void chat_input(WINDOW *win, const uint16_t user_id, uint8_t *username, int sock
     int inputting_info;
     int cursor_pos;
     // struct pollfd       fds;
-    struct Message      new_chat_header = {0};
-    struct chat_message new_chat_body   = {0};
+    // struct Message      new_chat_header = {0};
+    // struct chat_message new_chat_body   = {0};
+    struct CHT_Send new_chat = {0};
 
     height = 5;      // NOLINT
     width  = 111;    // NOLINT
@@ -259,11 +255,10 @@ void chat_input(WINDOW *win, const uint16_t user_id, uint8_t *username, int sock
             {    // NOLINT
                 message_text[i] = '\0';
 
-                build_chat_struct(&new_chat_header, &new_chat_body, user_id, message_text, username);
-                send_user_message(sockfd, new_chat_body, new_chat_header);
+                build_chat_struct(new_chat, user_id, message_text, username);
+                send_user_message(sockfd, &new_chat);
 
-                memset(&new_chat_body, 0, sizeof(new_chat_body));
-                memset(&new_chat_header, 0, sizeof(new_chat_header));
+                memset(&new_chat, 0, sizeof(new_chat));
 
                 wmove(win, 2, cursor_pos);    // NOLINT
                 wclrtoeol(win);

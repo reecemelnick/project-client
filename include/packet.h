@@ -26,7 +26,7 @@ uint8_t *get_error_code(const uint8_t *byte_stream, size_t size);
 
 void get_user_id(const uint8_t *byte_stream, uint16_t *user_id);
 
-void             read_user_message(uint8_t **byte_stream, char *message_buffer);
+// void             read_user_message(uint8_t **byte_stream, char *message_buffer);
 struct CHT_Send *read_chat_broadcast(const uint8_t *byte_stream);
 void             send_user_message(int fd, struct CHT_Send *cht_packet);
 
