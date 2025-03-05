@@ -166,12 +166,11 @@ int login_or_create(struct Message request_header, int sockfd, int form_type, in
 
 void make_ip_req(const int server_manager_fd, struct ConnectionMessage *connection_message, int *err)
 {
-    size_t       stream_size;
-    uint8_t      message_type;
-    uint8_t      version;
-    uint8_t     *incoming_stream;
-    size_t       payload_len;
-    const size_t payload_index = 5;
+    size_t   stream_size;
+    uint8_t  message_type;
+    uint8_t  version;
+    uint8_t *incoming_stream;
+    size_t   len;
 
     message_type = 0x00;
     version      = 0x01;
@@ -192,13 +191,25 @@ void make_ip_req(const int server_manager_fd, struct ConnectionMessage *connecti
     parse_connection_message_header(incoming_stream, connection_message);
     if(connection_message->server_online != 0)
     {
-        payload_len = (size_t)incoming_stream[payload_index - 1];    // retrieves the payload length
-        parse_and_extract_message(incoming_stream, &(connection_message->active_server_ip), payload_index, payload_len, err);
+        // TODO: uncomment port lines when sm implements port
+        const size_t ip_index = 5;
+        // size_t       port_index;
 
-        // prints length
-        printf("\npayload length: %zu\n", payload_len);
+        len = (size_t)incoming_stream[ip_index - 1];    // retrieves the server ip length
+        parse_and_extract_message(incoming_stream, &(connection_message->active_server_ip), ip_index, len, err);
+
         // prints server ip
-        send_packet_t(connection_message->active_server_ip, payload_len);
+        printf("\nserver ip length: %zu\n", len);
+        send_packet_t(connection_message->active_server_ip, len);
+
+        // port_index = ip_index + len + 1;    // retrieves the server port index
+
+        // len = (size_t)incoming_stream[port_index - 1];
+        // parse_and_extract_message(incoming_stream, &(connection_message->active_server_port), port_index, len, err);
+
+        // // prints server ip
+        // printf("\nserver port length: %zu\n", len);
+        // send_packet_t(connection_message->active_server_port, len);
     }
 
 cleanup:
@@ -252,6 +263,8 @@ int main(int argc, char *argv[])
 
     // TODO: must connect to server ip and port provided from sm
     // net_socket.address = (char *)connection_message.active_server_ip; // uncomment this line
+    // net_socket.port = (char *)connection_message.port;
+
     net_socket.address = strdup("127.0.0.2");    // TODO: change this to appropriate server ip
     net_socket.port    = SERVER_PORT;
 
