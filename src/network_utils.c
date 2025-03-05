@@ -1,14 +1,5 @@
 #include "../include/network_utils.h"
 
-void setup_signal(void (*handler)(int), int *err)
-{
-    if(signal(SIGINT, handler) == SIG_ERR)
-    {
-        perror("Error setting up signal handler");
-        *err = errno;
-    }
-}
-
 void handle_arguments(int argc, char *argv[], struct socket_network *net_socket, int *err)
 {
     int option;

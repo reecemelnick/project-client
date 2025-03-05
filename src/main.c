@@ -1,8 +1,8 @@
 #include "chat_screen.h"
 #include "error_message.h"
 #include "messages.h"
-#include "network_utils.h"
 #include "packet.h"
+#include "signals.h"
 #include "signup_form.h"
 #include "start_menu.h"
 #include <ncurses.h>
@@ -17,6 +17,8 @@ bool    handle_create_res(struct Message incoming_message, const uint8_t *incomi
 void make_ip_req(int server_manager_fd, struct ConnectionMessage *connection_message, int *err);
 
 // end Client-ServerManager functions
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+int terminate = 0;
 
 // assign packet type depending on login or create
 void set_packet_type(int form_type, uint8_t *type)
@@ -226,7 +228,7 @@ int main(int argc, char *argv[])
     struct Message           request_header     = {0};    // struct to form request header
     struct ConnectionMessage connection_message = {0};
     int                      err                = 0;
-    net_socket.port                             = PORT;
+    net_socket.port                             = SM_PORT;
 
     // connection_message.active_server_ip = NULL;
 
@@ -275,23 +277,33 @@ int main(int argc, char *argv[])
         goto cleanup;
     }
 
+    // setup_signal(sigint_handler, SIGINT, &err);
+    // if(err != 0)
+    // {
+    //     goto cleanup;
+    // }
     res = display_menu();
+    // if (terminate == 1) {
+    //     goto cleanup;
+    // }
 
     res = login_or_create(request_header, net_socket.sockfd, res, &err);
     if(res == -1)
     {
         printf("error opening form\n");
+        goto cleanup;
     }
 
     printf("client ran successfully\n");
 cleanup:
+    make_logout_req(net_socket.sockfd);
+
     free(connection_message.active_server_ip);
     if(net_socket.address != NULL)
     {
         free(net_socket.address);
         net_socket.address = NULL;
     }
-    socket_close(net_socket.sockfd);
     close(net_socket.sockfd);
 done:
     return 0;

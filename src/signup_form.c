@@ -1,6 +1,7 @@
 
 #include "signup_form.h"
 #include "gui.h"
+#include "signals.h"
 #include <ctype.h>
 #include <ncurses.h>
 #include <stdlib.h>

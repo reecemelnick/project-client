@@ -31,3 +31,5 @@ struct CHT_Send *read_chat_broadcast(const uint8_t *byte_stream);
 void             send_user_message(int fd, struct CHT_Send *cht_packet);
 
 uint8_t *construct_cht_payload(struct CHT_Send *cht_packet);
+void make_logout_req(int server_fd);
+void send_and_serialize_message(int server_fd, const struct Message *message);
