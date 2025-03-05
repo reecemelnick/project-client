@@ -28,3 +28,5 @@ void get_user_id(const uint8_t *byte_stream, uint16_t *user_id);
 
 // connectionmessage
 void parse_connection_message_header(const uint8_t *byte_stream, struct ConnectionMessage *incoming_message);
+
+// void make_logout_req();

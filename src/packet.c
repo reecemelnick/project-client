@@ -356,3 +356,7 @@ void parse_connection_message_header(const uint8_t *byte_stream, struct Connecti
     incoming_message->server_online = server_online;
     // TODO: check if no active servers main
 }
+
+// void make_logout_req()[
+
+// ]
