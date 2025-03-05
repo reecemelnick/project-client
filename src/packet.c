@@ -382,16 +382,68 @@ void read_user_message(const uint8_t *byte_stream, char *message_buffer)
     message_buffer[packet_length] = '\0';
 }
 
-/*
-    sends a message by constructing it first
+struct CHT_Send *read_chat_broadcast(const uint8_t *byte_stream)
+{
+    struct CHT_Send *incoming_chat;
+    int              pos;
+    uint8_t          length;
 
-    NOTE: this requires all header contents to be passed in, we should probably make a struct?
-*/
-void send_user_message(int fd, struct chat_message chat_body, struct Message chat_header)
+    incoming_chat = (struct CHT_Send *)malloc(sizeof(struct CHT_Send));
+    if(!incoming_chat)
+    {
+        perror("malloc");
+        return NULL;
+    }
+
+    pos                      = HEADER_SIZE + 1;
+    length                   = byte_stream[pos++];
+    incoming_chat->timestamp = (uint8_t *)malloc(length + (size_t)1);
+    if(!incoming_chat->timestamp)
+    {
+        perror("malloc");
+        free(incoming_chat);
+        return NULL;
+    }
+    memcpy(incoming_chat->timestamp, &byte_stream[pos], length);
+    incoming_chat->timestamp[length] = '\0';
+    pos += length + 1;
+
+    length                 = byte_stream[pos++];
+    incoming_chat->content = (uint8_t *)malloc(length + (size_t)1);
+    if(!incoming_chat->content)
+    {
+        perror("malloc");
+        free(incoming_chat->timestamp);
+        free(incoming_chat);
+        return NULL;
+    }
+    memcpy(incoming_chat->content, &byte_stream[pos], length);
+    incoming_chat->content[length] = '\0';
+    pos += length + 1;
+
+    length                  = byte_stream[pos++];
+    incoming_chat->username = (uint8_t *)malloc(length);
+    if(!incoming_chat->username)
+    {
+        perror("malloc");
+        free(incoming_chat->timestamp);
+        free(incoming_chat->content);
+        free(incoming_chat);
+        return NULL;
+    }
+    memcpy(incoming_chat->username, &byte_stream[pos], length);
+    incoming_chat->username[length] = '\0';
+
+    return incoming_chat;
+}
+
+void send_user_message(int fd, struct CHT_Send *cht_packet)
 {
     uint8_t  buffer[PACKETLEN];
+    uint8_t *payload;
     uint16_t sender_id_n;
     uint16_t payload_n;
+    size_t   buffer_size;
     int      pos;
     size_t   message_len;
     size_t   timestamp_len;
@@ -403,46 +455,55 @@ void send_user_message(int fd, struct chat_message chat_body, struct Message cha
     timestamp_len = strlen((char *)chat_body.timestamp);
     username_len  = strlen((char *)chat_body.username);
 
-    // assign typege
-    buffer[pos] = chat_header.packet_type;
+    // assign type
+    buffer[pos] = cht_packet->message->packet_type;
     pos++;
 
     // assign version
-    buffer[pos] = chat_header.version;
+    buffer[pos] = cht_packet->message->version;
     pos++;
 
     // assign id
-    sender_id_n = htons(chat_header.sender_id);
+    sender_id_n = htons(cht_packet->message->sender_id);
     memcpy(buffer + pos, &sender_id_n, sizeof(uint16_t));
     pos += (int)sizeof(uint16_t);
 
     // assign len
-    payload_n = htons(chat_header.payload_len);
+    payload_n = htons(cht_packet->message->payload_len);
     memcpy(buffer + pos, &payload_n, sizeof(uint16_t));
     pos += (int)sizeof(uint16_t);
 
     // assign payload
-    memcpy(buffer + pos, chat_body.timestamp, timestamp_len);
-    pos += (int)timestamp_len;
+    payload = construct_cht_payload(cht_packet);
+    memcpy(buffer + pos, payload, cht_packet->message->payload_len);
+    free(payload);
 
-    memcpy(buffer + pos, &tag_value, 1);
-    pos++;
-    memcpy(buffer + pos, &message_len, 1);
-    pos++;
-    memcpy(buffer + pos, chat_body.chat_message, message_len);
-    pos += (int)message_len;
-
-    memcpy(buffer + pos, &tag_value, 1);
-    pos++;
-    memcpy(buffer + pos, &username_len, 1);
-    pos++;
-    memcpy(buffer + pos, chat_body.username, username_len);
-    pos += (int)username_len;
-
-    // send_packet_t(buffer, (size_t)pos);
+    buffer_size = (size_t)HEADER_SIZE + buffer[HEADER_SIZE - 1];
 
     // sends packet at the end
-    send_packet(fd, buffer, (size_t)pos);
+    send_packet(fd, buffer, buffer_size);
+}
+
+uint8_t *construct_cht_payload(struct CHT_Send *cht_packet)
+{
+    uint8_t *payload;
+
+    size_t timestamp_size = (size_t)cht_packet->timestamp[1] + 2;
+    size_t content_size   = (size_t)cht_packet->content[1] + 2;
+    size_t username_size  = (size_t)cht_packet->username[1] + 2;
+
+    payload = (uint8_t *)malloc(timestamp_size + content_size + username_size);
+    if(payload == NULL)
+    {
+        perror("malloc");
+        return NULL;
+    }
+
+    memcpy(payload, cht_packet->timestamp, timestamp_size);
+    memcpy(payload + (int)timestamp_size, cht_packet->content, content_size);
+    memcpy(payload + (int)timestamp_size + (int)content_size, cht_packet->username, username_size);
+
+    return payload;
 }
 
 // --------------------------------- end ---------------------------------
