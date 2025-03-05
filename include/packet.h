@@ -29,4 +29,5 @@ void get_user_id(const uint8_t *byte_stream, uint16_t *user_id);
 // connectionmessage
 void parse_connection_message_header(const uint8_t *byte_stream, struct ConnectionMessage *incoming_message);
 
-// void make_logout_req();
+void make_logout_req(int server_fd);
+void send_and_serialize_message(int server_fd, const struct Message *message);

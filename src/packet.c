@@ -357,6 +357,44 @@ void parse_connection_message_header(const uint8_t *byte_stream, struct Connecti
     // TODO: check if no active servers main
 }
 
-// void make_logout_req()[
+void make_logout_req(int server_fd)
+{
+    const uint8_t packet_type = 0x0C;
+    // TODO: change versions accordingly
+    const uint8_t version = 0x01;
+    // TODO: temporary, hardcoded sender id
+    const uint16_t sender_id   = 0x0001;
+    const uint16_t payload_len = 0x0000;
+    struct Message logout_message;
 
-// ]
+    construct_message(&logout_message, packet_type, version, sender_id, payload_len);
+
+    send_and_serialize_message(server_fd, &logout_message);
+}
+
+void send_and_serialize_message(int server_fd, const struct Message *message)
+{
+    size_t   packet_size;
+    uint8_t  buffer[PACKETLEN];
+    uint16_t sender_id;
+    uint16_t payload_len;
+    int      offset = 0;
+
+    packet_size = (size_t)HEADER_SIZE + message->payload_len;
+
+    buffer[offset++] = message->packet_type;
+    buffer[offset++] = message->version;
+
+    sender_id = htons(message->sender_id);
+    memcpy(buffer + offset, &sender_id, sizeof(uint16_t));
+    offset += (int)sizeof(uint16_t);
+
+    payload_len = htons(message->payload_len);
+    memcpy(buffer + offset, &payload_len, sizeof(uint16_t));
+
+    // printing packet
+    printf("Sending logout req packet of size %zu\n", packet_size);
+    send_packet_t(buffer, packet_size);
+
+    send_packet(server_fd, buffer, packet_size);
+}

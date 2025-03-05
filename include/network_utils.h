@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 // TODO: change these ports accordingly to server/sm if needed
-#define PORT 8080
+#define SM_PORT 8080
 #define SERVER_PORT 9000    // temporary, sm does not send back ip and port currently
 
 struct socket_network
@@ -28,8 +28,6 @@ struct socket_network
     // cppcheck-suppress unusedStructMember
     uint16_t port;
 };
-
-void setup_signal(void (*handler)(int), int *err);
 
 void handle_arguments(int argc, char *argv[], struct socket_network *net_socket, int *err);
 
