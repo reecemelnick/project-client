@@ -338,36 +338,6 @@ void send_and_serialize_connection_message(const int server_manager_fd, const st
 
 // ------------------------- messaging functions -------------------------
 
-/*
-    reads a message into the passed in message buffer
-
-    NOTE: written assuming that we know that a chat message is incomming and we know the protocol
-*/
-void read_user_message(uint8_t **byte_stream, char *message_buffer)
-{
-    int      index;
-    int      packet_length;
-    uint16_t packet_length_n;
-
-    index = PAYLOADINDEX;
-
-    // read in the packet length and store
-    memcpy(&packet_length_n, (*byte_stream) + LENGTHINDEX, sizeof(uint16_t));
-    packet_length_n = ntohs(packet_length_n);
-    packet_length   = (int)packet_length_n;
-
-    // read through message and store?? stop at correct length
-    for(int i = 0; i < packet_length; i++)
-    {
-        printf("%d", i);
-        message_buffer[i] = (char)*((*byte_stream) + index + i);
-    }
-
-    // TESTPRINT (it seems works, can be deleted if no longer needed)
-    message_buffer[packet_length] = '\0';
-    printf("\n\nmsg: %s", message_buffer);
-}
-
 struct CHT_Send *read_chat_broadcast(const uint8_t *byte_stream)
 {
     struct CHT_Send *incoming_chat;
