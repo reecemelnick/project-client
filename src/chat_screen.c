@@ -373,3 +373,14 @@ void chat_log_box(WINDOW **win)
 
     wrefresh(*win);
 }
+
+void get_generalized_time(uint8_t *buffer, size_t size)
+{
+    time_t     raw_time;
+    struct tm *time_info;
+
+    time(&raw_time);
+    time_info = gmtime(&raw_time);
+
+    strftime((char *)buffer, size, "%Y%m%d%H%M%SZ", time_info);
+}
