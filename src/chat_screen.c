@@ -16,7 +16,7 @@
 #define INPUT_BUFFER_SIZE 128
 #define PACKETLEN 777
 #define POLL_TIMEOUT 500
-#define TIMESTAMP_SIZE 15
+// #define TIMESTAMP_SIZE 15
 
 static pthread_mutex_t *get_ncurses_mutex(void);
 void                    make_chat_input_box(WINDOW **win, char *username, uint16_t user_id, int *cursor_pos);
@@ -150,7 +150,7 @@ int start_chat_screen(const uint16_t user_id, uint8_t *username, int sockfd)
     pthread_detach(chat_box_thread);
 
     // read and send chat messages typed by user
-    chat_input(chat_input_win, (int)user_id, username, sockfd);
+    chat_input(chat_input_win, user_id, username, sockfd);
 
     pthread_mutex_lock(get_ncurses_mutex());
     delwin(usersWin);
@@ -161,22 +161,22 @@ int start_chat_screen(const uint16_t user_id, uint8_t *username, int sockfd)
 }
 
 // populate CHT_Send struct
-void build_chat_struct(struct CHT_Send *new_chat, struct Message *chat_header, const char *message, const uint8_t *username, uint16_t id)
+void build_chat_struct(struct CHT_Send *new_chat, struct Message *chat_header, const uint8_t *message, const uint8_t *username, uint16_t id)
 {
     uint8_t timestamp_buf[PACKETLEN];
     uint8_t content_buf[PACKETLEN];
     uint8_t username_buf[PACKETLEN];
     size_t  payload_len  = 0;
-    size_t  message_len  = strlen(message);
+    size_t  message_len  = strlen((const char *)message);
     size_t  username_len = strlen((const char *)username);
 
     // HARDCODED: need to change
-    // uint8_t timestamp[]   = {0x32, 0x30, 0x32, 0x35, 0x30, 0x33, 0x30, 0x34, 0x30, 0x33, 0x30, 0x39, 0x30, 0x36, 0x5a};    // NOLINT
-    // size_t  timestamp_len = sizeof(timestamp);   
-    
-    size_t  timestamp_len = TIMESTAMP_SIZE;
-    uint8_t timestamp[TIMESTAMP_SIZE]   = {0};
-    get_generalized_time(&timestamp, TIMESTAMP_SIZE);
+    uint8_t timestamp[]   = {0x32, 0x30, 0x32, 0x35, 0x30, 0x33, 0x30, 0x34, 0x30, 0x33, 0x30, 0x39, 0x30, 0x36, 0x5a};    // NOLINT
+    size_t  timestamp_len = sizeof(timestamp);
+
+    // size_t  timestamp_len             = TIMESTAMP_SIZE;
+    // uint8_t timestamp[TIMESTAMP_SIZE] = {0};
+    // get_generalized_time(&timestamp, TIMESTAMP_SIZE);
 
     // populate packet header
     chat_header->packet_type = CHT_Send;
@@ -208,9 +208,9 @@ void build_chat_struct(struct CHT_Send *new_chat, struct Message *chat_header, c
 
     // populate encoded content
     content_buf[0] = UTF8STRING;
-    content_buf[1] = (uint8_t)strlen(message);
-    memcpy(content_buf + 2, message, strlen(message));
-    memcpy(new_chat->content, content_buf, strlen(message) + 2);
+    content_buf[1] = (uint8_t)strlen((const char *)message);
+    memcpy(content_buf + 2, message, strlen((const char *)message));
+    memcpy(new_chat->content, content_buf, strlen((const char *)message) + 2);
 
     // populate encoded username
     username_buf[0] = UTF8STRING;
@@ -278,7 +278,7 @@ void chat_input(WINDOW *win, const uint16_t user_id, uint8_t *username, int sock
                 message_text[i] = '\0';
 
                 // populate chat structs and send
-                build_chat_struct(&new_chat, &chat_header, message_text, username, user_id);
+                build_chat_struct(&new_chat, &chat_header, (uint8_t *)message_text, username, user_id);
                 send_user_message(sockfd, &new_chat);
 
                 memset(&new_chat, 0, sizeof(new_chat));
@@ -381,11 +381,11 @@ void chat_log_box(WINDOW **win)
 
 void get_generalized_time(uint8_t *buffer, size_t size)
 {
-    time_t     raw_time;
-    struct tm *time_info;
+    time_t    raw_time;
+    struct tm time_info;
 
     time(&raw_time);
-    time_info = gmtime(&raw_time);
+    gmtime_r(&raw_time, &time_info);
 
-    strftime((char *)buffer, size, "%Y%m%d%H%M%SZ", time_info);
+    strftime((char *)buffer, size, "%Y%m%d%H%M%SZ", &time_info);
 }
