@@ -16,6 +16,7 @@
 #define INPUT_BUFFER_SIZE 128
 #define PACKETLEN 777
 #define POLL_TIMEOUT 500
+#define TIMESTAMP_SIZE 15
 
 static pthread_mutex_t *get_ncurses_mutex(void);
 void                    make_chat_input_box(WINDOW **win, char *username, uint16_t user_id, int *cursor_pos);
@@ -170,8 +171,12 @@ void build_chat_struct(struct CHT_Send *new_chat, struct Message *chat_header, c
     size_t  username_len = strlen((const char *)username);
 
     // HARDCODED: need to change
-    uint8_t timestamp[]   = {0x32, 0x30, 0x32, 0x35, 0x30, 0x33, 0x30, 0x34, 0x30, 0x33, 0x30, 0x39, 0x30, 0x36, 0x5a};    // NOLINT
-    size_t  timestamp_len = sizeof(timestamp);
+    // uint8_t timestamp[]   = {0x32, 0x30, 0x32, 0x35, 0x30, 0x33, 0x30, 0x34, 0x30, 0x33, 0x30, 0x39, 0x30, 0x36, 0x5a};    // NOLINT
+    // size_t  timestamp_len = sizeof(timestamp);   
+    
+    size_t  timestamp_len = TIMESTAMP_SIZE;
+    uint8_t timestamp[TIMESTAMP_SIZE]   = {0};
+    get_generalized_time(&timestamp, TIMESTAMP_SIZE);
 
     // populate packet header
     chat_header->packet_type = CHT_Send;
