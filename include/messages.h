@@ -83,6 +83,7 @@ typedef enum {
     SEQUENCE = 48, // Noted in protocol document that they ALWAYS encode it as 48 (30 in hex).
     PRINTABLESTRING = 19,
     UTCTIME = 23,
+    GENTIME = 24
 } Tag;
 
 enum packet_types {

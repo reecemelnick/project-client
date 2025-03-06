@@ -17,8 +17,9 @@
 #define TIMEOUT 100000
 #define PACKETLEN 777
 #define IDINDEX_LOGIN 8
-#define PAYLOADINDEX 6
-#define LENGTHINDEX 4
+
+// #define PAYLOADINDEX 6
+// #define LENGTHINDEX 4
 
 // populates all the fields of a Message struct
 void construct_message(struct Message *header, uint8_t type, uint8_t version, uint16_t id, uint16_t length)
@@ -345,42 +346,6 @@ void send_and_serialize_connection_message(const int server_manager_fd, const st
 
     NOTE: written assuming that we know that a chat message is incomming and we know the protocol
 */
-// void read_user_message(const uint8_t *byte_stream, char *message_buffer)
-// {
-//     int      index;
-//     int      packet_length;
-//     uint16_t packet_length_n;
-//     int      file_fd;
-//     index = PAYLOADINDEX;
-
-//     // read in the packet length and store
-//     memcpy(&packet_length_n, byte_stream + LENGTHINDEX, sizeof(uint16_t));
-//     packet_length_n = ntohs(packet_length_n);
-//     packet_length   = (int)packet_length_n;
-
-//     file_fd = open("/Users/reecemelnick/Desktop/packet.txt", O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0644);    // NOLINT
-//     if(file_fd < 0)
-//     {
-//         perror("open failed");
-//     }
-
-//     printf("packet len: %d\n", (int)packet_length_n);
-
-//     // read through message and store?? stop at correct length
-//     for(int i = 0; i < packet_length; i++)
-//     {
-//         message_buffer[i] = (char)((*byte_stream) + index + i);
-//     }
-
-//     // send_packet_t(byte_stream, packet_length_n);
-
-//     write(file_fd, message_buffer, packet_length_n);    // NOLINT
-
-//     close(file_fd);
-
-//     // TESTPRINT (it seems works, can be deleted if no longer needed)
-//     message_buffer[packet_length] = '\0';
-// }
 
 struct CHT_Send *read_chat_broadcast(const uint8_t *byte_stream)
 {
@@ -437,53 +402,6 @@ struct CHT_Send *read_chat_broadcast(const uint8_t *byte_stream)
     return incoming_chat;
 }
 
-// void send_user_message(int fd, struct CHT_Send *cht_packet)
-// {
-//     uint8_t  buffer[PACKETLEN];
-//     uint8_t *payload;
-//     uint16_t sender_id_n;
-//     uint16_t payload_n;
-//     size_t   buffer_size;
-//     int      pos;
-//     size_t   message_len;
-//     size_t   timestamp_len;
-//     size_t   username_len;
-//     uint8_t  tag_value = UTF8STRING;
-
-//     pos           = 0;
-//     message_len   = strlen((char *)cht_packet.content);
-//     timestamp_len = strlen((char *)cht_packet.timestamp);
-//     username_len  = strlen((char *)cht_packet.username);
-
-//     // assign type
-//     buffer[pos] = cht_packet->message->packet_type;
-//     pos++;
-
-//     // assign version
-//     buffer[pos] = cht_packet->message->version;
-//     pos++;
-
-//     // assign id
-//     sender_id_n = htons(cht_packet->message->sender_id);
-//     memcpy(buffer + pos, &sender_id_n, sizeof(uint16_t));
-//     pos += (int)sizeof(uint16_t);
-
-//     // assign len
-//     payload_n = htons(cht_packet->message->payload_len);
-//     memcpy(buffer + pos, &payload_n, sizeof(uint16_t));
-//     pos += (int)sizeof(uint16_t);
-
-//     // assign payload
-//     payload = construct_cht_payload(cht_packet);
-//     memcpy(buffer + pos, payload, cht_packet->message->payload_len);
-//     free(payload);
-
-//     buffer_size = (size_t)HEADER_SIZE + buffer[HEADER_SIZE - 1];
-
-//     // sends packet at the end
-//     send_packet(fd, buffer, buffer_size);
-// }
-
 void send_user_message(int fd, struct CHT_Send *cht_packet)
 {
     uint8_t  buffer[PACKETLEN];
@@ -522,6 +440,10 @@ void send_user_message(int fd, struct CHT_Send *cht_packet)
 
     // sends packet at the end
     send_packet(fd, buffer, buffer_size);
+
+    free(cht_packet->content);
+    free(cht_packet->timestamp);
+    free(cht_packet->username);
 }
 
 uint8_t *construct_cht_payload(struct CHT_Send *cht_packet)
