@@ -40,7 +40,7 @@ void *chat_log_thread(void *arg)
     int                       status;
     struct pollfd             fds;                                 // pollfd structure that will contain server fd
     int                       print_line;                          // stores the current line to print message to
-    const struct CHT_Send    *incoming_chat;                       // chat struct that will store values of values of chat broadcast
+    struct CHT_Send          *incoming_chat;                       // chat struct that will store values of values of chat broadcast
     const struct thread_args *args = (struct thread_args *)arg;    // structure holding thread parameters
 
     // make new ncurses window and inialize it with chat_log_box
@@ -72,7 +72,7 @@ void *chat_log_thread(void *arg)
             ssize_t read_bytes;    // number of bytes read
             uint8_t read_buffer[PACKETLEN];
 
-            read_bytes = read(args->fd, read_buffer, sizeof(read_buffer) - 1);
+            read_bytes = read(args->fd, read_buffer, PACKETLEN);
             // if data is read
             if(read_bytes > 0)
             {
@@ -83,18 +83,25 @@ void *chat_log_thread(void *arg)
                 }
                 else
                 {
-                    // create chat struct from input
                     read_buffer[read_bytes] = '\0';
-                    incoming_chat           = read_chat_broadcast(read_buffer);
+                    // create chat struct from input
+                    incoming_chat = read_chat_broadcast(read_buffer);
 
                     // update chat log in critical section
                     pthread_mutex_lock(get_ncurses_mutex());
                     mvwprintw(chat_log_win, print_line, 1, "%s: %s", incoming_chat->username, incoming_chat->content);
+                    // mvwprintw(chat_log_win, print_line, 1, "hey");
                     wrefresh(chat_log_win);
                     pthread_mutex_unlock(get_ncurses_mutex());
 
                     // update current line printing to and clear read buffer
                     print_line++;
+
+                    // cleanup
+                    free(incoming_chat->content);
+                    free(incoming_chat->timestamp);
+                    free(incoming_chat->username);
+                    free(incoming_chat);
                 }
 
                 memset(read_buffer, 0, sizeof(read_buffer));

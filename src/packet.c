@@ -387,7 +387,7 @@ struct CHT_Send *read_chat_broadcast(const uint8_t *byte_stream)
     pos += length + 1;
 
     length                  = byte_stream[pos++];
-    incoming_chat->username = (uint8_t *)malloc(length);
+    incoming_chat->username = (uint8_t *)malloc(length + (size_t)1);
     if(!incoming_chat->username)
     {
         perror("malloc");
