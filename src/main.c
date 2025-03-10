@@ -223,12 +223,12 @@ cleanup:
 */
 int main(int argc, char *argv[])
 {
-    struct socket_network    net_socket;    // network socket info
-    int                      res;
-    struct Message           request_header     = {0};    // struct to form request header
-    struct ConnectionMessage connection_message = {0};
-    int                      err                = 0;
-    net_socket.port                             = SM_PORT;
+    struct socket_network net_socket;    // network socket info
+    int                   res;
+    struct Message        request_header = {0};    // struct to form request header
+    // struct ConnectionMessage connection_message = {0};
+    int err = 0;
+    // net_socket.port                             = SM_PORT;
 
     // connection_message.active_server_ip = NULL;
 
@@ -239,28 +239,28 @@ int main(int argc, char *argv[])
     }
 
     // socket initialization (sm)
-    setup_socket(&net_socket, &err);
-    if(err != 0)
-    {
-        goto cleanup;
-    }
+    // setup_socket(&net_socket, &err);
+    // if(err != 0)
+    // {
+    //     goto cleanup;
+    // }
 
-    net_socket.address = NULL;    // set to null, unneeded
     // client-sm communication
+    // net_socket.address = NULL;    // set to null, unneeded
 
     // send active server ip request
-    make_ip_req(net_socket.sockfd, &connection_message, &err);
-    if(err != 0)
-    {
-        goto cleanup;
-    }
-    if(connection_message.server_online == 0)
-    {
-        printf("No active server.\n");
-        goto cleanup;
-    }
+    // make_ip_req(net_socket.sockfd, &connection_message, &err);
+    // if(err != 0)
+    // {
+    //     goto cleanup;
+    // }
+    // if(connection_message.server_online == 0)
+    // {
+    //     printf("No active server.\n");
+    //     goto cleanup;
+    // }
 
-    close(net_socket.sockfd);
+    // close(net_socket.sockfd);
     // end connection with sm
 
     // TODO: must connect to server ip and port provided from sm
@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
 cleanup:
     make_logout_req(net_socket.sockfd);
 
-    free(connection_message.active_server_ip);
+    // free(connection_message.active_server_ip);
     if(net_socket.address != NULL)
     {
         free(net_socket.address);
