@@ -13,7 +13,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#define INPUT_BUFFER_SIZE 128
+#define INPUT_BUFFER_SIZE 100
 #define PACKETLEN 777
 #define POLL_TIMEOUT 500
 // #define TIMESTAMP_SIZE 15
@@ -45,8 +45,9 @@ void *chat_log_thread(void *arg)
 
     // make new ncurses window and inialize it with chat_log_box
     WINDOW *chat_log_win = NULL;
+    WINDOW *inner_win    = NULL;
     pthread_mutex_lock(get_ncurses_mutex());
-    chat_log_box(&chat_log_win);
+    chat_log_box(&chat_log_win, &inner_win);
     pthread_mutex_unlock(get_ncurses_mutex());
 
     fds.fd     = args->fd;
@@ -89,13 +90,20 @@ void *chat_log_thread(void *arg)
 
                     // update chat log in critical section
                     pthread_mutex_lock(get_ncurses_mutex());
-                    mvwprintw(chat_log_win, print_line, 1, "%s: %s", incoming_chat->username, incoming_chat->content);
+                    mvwprintw(inner_win, print_line, 0, "%s: %s", incoming_chat->username, incoming_chat->content);
                     // mvwprintw(chat_log_win, print_line, 1, "hey");
-                    wrefresh(chat_log_win);
+                    wrefresh(inner_win);
                     pthread_mutex_unlock(get_ncurses_mutex());
 
                     // update current line printing to and clear read buffer
-                    print_line++;
+                    if(read_bytes > 70)    // NOLINT
+                    {
+                        print_line += 2;
+                    }
+                    else
+                    {
+                        print_line++;
+                    }
 
                     // cleanup
                     free(incoming_chat->content);
@@ -368,7 +376,7 @@ void make_chat_input_box(WINDOW **win, char *username, uint16_t user_id, int *cu
 }
 
 // make chat log box
-void chat_log_box(WINDOW **win)
+void chat_log_box(WINDOW **win, WINDOW **inner)
 {
     int height;
     int width;
@@ -383,7 +391,10 @@ void chat_log_box(WINDOW **win)
     *win = newwin(height, width, starty, startx);
     draw_box(*win);
 
+    *inner = derwin(*win, height - 2, width - 2, 0, 1);
+
     wrefresh(*win);
+    wrefresh(*inner);
 }
 
 void get_generalized_time(uint8_t *buffer, size_t size)

@@ -440,10 +440,6 @@ void send_user_message(int fd, struct CHT_Send *cht_packet)
 
     // sends packet at the end
     send_packet(fd, buffer, buffer_size);
-
-    free(cht_packet->content);
-    free(cht_packet->timestamp);
-    free(cht_packet->username);
 }
 
 uint8_t *construct_cht_payload(struct CHT_Send *cht_packet)
