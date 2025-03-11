@@ -496,7 +496,7 @@ void make_logout_req(int server_fd)
 {
     const uint8_t packet_type = 0x0C;
     // TODO: change versions accordingly
-    const uint8_t version = 0x01;
+    const uint8_t version = VERSION;
     // TODO: temporary, hardcoded sender id
     const uint16_t sender_id   = 0x0001;
     const uint16_t payload_len = 0x0000;

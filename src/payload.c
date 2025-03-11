@@ -24,9 +24,11 @@ void convert_username_password(struct ACC_Create_Login *acc_create, const char *
 {
     // Converts username and password to byte stream and stores it accordingly to acc_create
     size_t len = strlen(username);
+    printf("username length: %zu\n", len);
     string_to_bytes(username, &acc_create->username, len, err);
 
     len = strlen(password);
+    printf("password length: %zu\n", len);
     string_to_bytes(username, &acc_create->password, len, err);
 }
 

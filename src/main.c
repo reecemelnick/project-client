@@ -125,7 +125,7 @@ int login_or_create(struct Message request_header, int sockfd, int form_type, in
     acc_create_login.username       = NULL;
     acc_create_login.password       = NULL;
 
-    while(!success)
+    while(!success && !terminate)
     {
         uint8_t type;
 
@@ -136,6 +136,10 @@ int login_or_create(struct Message request_header, int sockfd, int form_type, in
             free_acc_create(&acc_create_login);
             perror("opening form");
             return -1;
+        }
+        if(terminate)
+        {
+            break;
         }
 
         type = make_login_create_req(&request_header, acc_create_login, form_type);
@@ -175,7 +179,7 @@ void make_ip_req(const int server_manager_fd, struct ConnectionMessage *connecti
     size_t   len;
 
     message_type = 0x00;
-    version      = 0x01;
+    version      = VERSION;
 
     construct_connection_message(connection_message, message_type, version, 0x00, 0x00);
 
@@ -293,6 +297,10 @@ int main(int argc, char *argv[])
     if(res == -1)
     {
         printf("error opening form\n");
+        goto cleanup;
+    }
+    if(terminate)
+    {    // SIGINT received in login or account creation page
         goto cleanup;
     }
 

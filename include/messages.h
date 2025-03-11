@@ -3,6 +3,7 @@
 #define ENCODE_BYTES 2
 #define ERROR_MESSSAGE_INDEX 11
 #define ERROR_CODE_ENCODED 3
+#define VERSION 0x02
 
 #include <stdint.h>
 #include <stdlib.h>
