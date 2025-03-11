@@ -2,6 +2,7 @@
 
 void setup_signal(void (*handler)(int), const int signal_type, int *err)
 {
+    terminate = 0;
     if(signal(signal_type, handler) == SIG_ERR)
     {
         perror("Error setting up signal handler");

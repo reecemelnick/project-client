@@ -277,15 +277,17 @@ int main(int argc, char *argv[])
         goto cleanup;
     }
 
-    // setup_signal(sigint_handler, SIGINT, &err);
-    // if(err != 0)
-    // {
-    //     goto cleanup;
-    // }
+    setup_signal(sigint_handler, SIGINT, &err);
+    if(err != 0)
+    {
+        goto cleanup;
+    }
+
     res = display_menu();
-    // if (terminate == 1) {
-    //     goto cleanup;
-    // }
+    if(terminate)
+    {
+        goto cleanup;
+    }
 
     res = login_or_create(request_header, net_socket.sockfd, res, &err);
     if(res == -1)
