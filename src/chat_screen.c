@@ -55,7 +55,7 @@ void *chat_log_thread(void *arg)
     print_line = 1;
 
     // continous loop reading broadcast messages from server
-    while(1)
+    while(!terminate)
     {
         int ret = poll(&fds, 1, POLL_TIMEOUT);    // poll with timeout of 500ms
 
@@ -120,7 +120,7 @@ void *chat_log_thread(void *arg)
     }
 
     delwin(chat_log_win);
-    endwin();
+    // endwin();
     return NULL;
 }
 
@@ -155,15 +155,13 @@ int start_chat_screen(const uint16_t user_id, uint8_t *username, int sockfd)
         return EXIT_FAILURE;
     }
     pthread_detach(chat_box_thread);
-
     // read and send chat messages typed by user
     chat_input(chat_input_win, user_id, username, sockfd);
-
     pthread_mutex_lock(get_ncurses_mutex());
     delwin(usersWin);
+    delwin(chat_input_win);
     endwin();
     pthread_mutex_unlock(get_ncurses_mutex());
-
     return 0;
 }
 
@@ -232,14 +230,14 @@ void build_chat_struct(struct CHT_Send *new_chat, struct Message *chat_header, c
 
 void chat_input(WINDOW *win, const uint16_t user_id, uint8_t *username, int sockfd)
 {
-    char            message_text[INPUT_BUFFER_SIZE];
-    int             i;
-    int             inputting_info;
+    char message_text[INPUT_BUFFER_SIZE] = {0};
+    int  i;
+    // int             inputting_info;
     int             cursor_pos;
     struct CHT_Send new_chat    = {0};
     struct Message  chat_header = {0};
 
-    inputting_info = 1;
+    // inputting_info = 1;
 
     // intialize chat input box
     pthread_mutex_lock(get_ncurses_mutex());
@@ -248,63 +246,70 @@ void chat_input(WINDOW *win, const uint16_t user_id, uint8_t *username, int sock
 
     // continuously read chat input from user
     i = 0;
-    while(inputting_info)
+    // nodelay(win, TRUE);
+    while(!terminate)
     {
-        int ch;
+        int ch = wgetch(win);    // Get input
 
-        while((ch = wgetch(win)))
+        if(terminate)    // Exit immediately if terminate is set
         {
-            // if character is not backspace, enter key or CTRL-C
-            if((ch != 127 && ch != KEY_BACKSPACE && ch != '\n' && ch != 3) && (size_t)i < sizeof(message_text) - 1)    // NOLINT
-            {
-                // build message buffer                                                                     // NOLINT
-                message_text[i++] = (char)ch;
+            printf("Exiting chat input\n");
+            break;
+        }
 
+        // if(ch == ERR)
+        // {
+        //     continue;
+        // }
+        // if character is not backspace, enter key or CTRL-C
+        if((ch != 127 && ch != KEY_BACKSPACE && ch != '\n' && ch != 3) && (size_t)i < sizeof(message_text) - 1)    // NOLINT
+        {
+            // build message buffer                                                                     // NOLINT
+            message_text[i++] = (char)ch;
+
+            pthread_mutex_lock(get_ncurses_mutex());
+            waddch(win, (chtype)ch);
+            wrefresh(win);
+            pthread_mutex_unlock(get_ncurses_mutex());
+        }
+        // if backspace delete last character from screen
+        else if(ch == 127 || ch == KEY_BACKSPACE)    // NOLINT
+        {
+            if(i > 0)
+            {
+                i--;
                 pthread_mutex_lock(get_ncurses_mutex());
-                waddch(win, (chtype)ch);
+                wmove(win, 2, cursor_pos + i);    // NOLINT
+                waddch(win, ' ');
+                wmove(win, 2, cursor_pos + i);    // NOLINT
                 wrefresh(win);
                 pthread_mutex_unlock(get_ncurses_mutex());
             }
-            // if backspace delete last character from screen
-            else if(ch == 127 || ch == KEY_BACKSPACE)    // NOLINT
-            {
-                if(i > 0)
-                {
-                    i--;
-                    pthread_mutex_lock(get_ncurses_mutex());
-                    wmove(win, 2, cursor_pos + i);    // NOLINT
-                    waddch(win, ' ');
-                    wmove(win, 2, cursor_pos + i);    // NOLINT
-                    wrefresh(win);
-                    pthread_mutex_unlock(get_ncurses_mutex());
-                }
-            }
-            // on enter pressed
-            else if(ch == '\n')
-            {
-                message_text[i] = '\0';
+        }
+        // on enter pressed
+        else if(ch == '\n')
+        {
+            message_text[i] = '\0';
 
-                // populate chat structs and send
-                build_chat_struct(&new_chat, &chat_header, (uint8_t *)message_text, username, user_id);
-                send_user_message(sockfd, &new_chat);
+            // populate chat structs and send
+            build_chat_struct(&new_chat, &chat_header, (uint8_t *)message_text, username, user_id);
+            send_user_message(sockfd, &new_chat);
 
-                memset(&new_chat, 0, sizeof(new_chat));
-                memset(message_text, 0, sizeof(message_text));
+            memset(&new_chat, 0, sizeof(new_chat));
+            memset(message_text, 0, sizeof(message_text));
 
-                // reset inputted text on GUI
-                wmove(win, 2, cursor_pos);
-                wclrtoeol(win);
-                wrefresh(win);
-                i = 0;
-            }
-            else if(ch == 3)
-            {
-                inputting_info = 0;
-                break;
-            }
+            // reset inputted text on GUI
+            wmove(win, 2, cursor_pos);
+            wclrtoeol(win);
+            wrefresh(win);
+            i = 0;
+        }
+        else if(ch == 3)
+        {
+            terminate = 1;
+            break;
         }
     }
-
     wrefresh(win);
 }
 

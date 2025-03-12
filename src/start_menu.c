@@ -1,6 +1,5 @@
 #include "start_menu.h"
 #include "gui.h"
-#include "signals.h"
 #include <ncurses.h>
 
 #define HEIGHT 10

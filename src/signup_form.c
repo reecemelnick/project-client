@@ -1,7 +1,6 @@
 
 #include "signup_form.h"
 #include "gui.h"
-#include "signals.h"
 #include <ctype.h>
 #include <ncurses.h>
 #include <stdlib.h>
@@ -62,7 +61,6 @@ void start_signup_form(struct ACC_Create_Login *acc_create, int setting, int *er
     // used to determine how long username and password are
     i = 0;
     j = 0;
-
     while(inputting_info && !terminate)
     {
         int ch;
