@@ -24,30 +24,55 @@ typedef struct Node
 {
     // message data
     char *data;
-
     // next message in list
     struct Node *next;
 } Node;
 
 static pthread_mutex_t *get_ncurses_mutex(void);
 void                    make_chat_input_box(WINDOW **win, char *username, uint16_t user_id, int *cursor_pos);
-Node                   *add_message_to_LL(uint8_t *message);
+Node                   *add_message_to_LL(const uint8_t *message, const uint8_t *username);
 void                    log_LL(Node *head_node, int filefd);
 void                    free_nodes(Node *head_node);
+void                    clear_text_window(WINDOW *win);
+void                    show_messages(WINDOW *win, Node *head);
 
 struct thread_args
 {
     int fd;
 };
 
-Node *add_message_to_LL(uint8_t *message)
+Node *add_message_to_LL(const uint8_t *message, const uint8_t *username)
 {
-    Node *new_node = (Node *)malloc(sizeof(Node));
+    size_t message_len;
+    size_t username_len;
+    Node  *new_node;
+    size_t total_len;
+
+    if(!message || !username)
+    {
+        return NULL;
+    }
+
+    message_len  = strlen((const char *)message);
+    username_len = strlen((const char *)username);
+
+    total_len = username_len + 2 + message_len + 1;
+
+    new_node = (Node *)malloc(sizeof(Node));
     if(!new_node)
     {
         exit(EXIT_FAILURE);
     }
-    new_node->data = (char *)message;
+
+    new_node->data = (char *)malloc(total_len);
+    if(!new_node->data)
+    {
+        free(new_node);
+        exit(EXIT_FAILURE);
+    }
+
+    snprintf(new_node->data, total_len, "%s: %s", username, message);
+
     new_node->next = NULL;
 
     return new_node;
@@ -68,7 +93,35 @@ void log_LL(Node *head_node, int filefd)
     }
 }
 
-// void free_nodes(Node *head_node)
+void clear_text_window(WINDOW *win)
+{
+    if(win)
+    {
+        werase(win);
+        wrefresh(win);
+    }
+}
+
+void show_messages(WINDOW *win, Node *head)
+{
+    Node *itr;
+    int   print_line;
+    itr = head->next;
+
+    print_line = 1;
+
+    while(itr != NULL)
+    {
+        pthread_mutex_lock(get_ncurses_mutex());
+        mvwprintw(win, print_line, 0, "%s", itr->data);
+        wrefresh(win);
+        pthread_mutex_unlock(get_ncurses_mutex());
+        print_line++;
+        itr = itr->next;
+    }
+}
+
+// void free_nodes(NoZde *head_node)
 // {
 //     Node *itr;
 //     Node *cur;
@@ -103,6 +156,7 @@ _Noreturn void *chat_log_thread(void *arg)
     int                       filefd;
     const char               *file_path;
     Node                     *head_node;
+    Node                     *cur_node;
     int                       flags;
 
     // make new ncurses window and inialize it with chat_log_box
@@ -116,16 +170,32 @@ _Noreturn void *chat_log_thread(void *arg)
     pthread_mutex_unlock(get_ncurses_mutex());
 
     // logging file
-    file_path = "/Users/reecemelnick/Desktop/log.txt";
+    file_path = "/home/reece/Desktop/log.txt";
     filefd    = open(file_path, O_WRONLY | O_CLOEXEC | O_APPEND);
     if(filefd == -1)
     {
         pthread_mutex_lock(get_ncurses_mutex());
         mvwprintw(inner_win, print_line, 0, "Failed to open file");
+        wrefresh(inner_win);
         pthread_mutex_unlock(get_ncurses_mutex());
     }
 
-    head_node = add_message_to_LL(NULL);
+    pthread_mutex_lock(get_ncurses_mutex());
+    mvwprintw(
+        inner_win,
+        2,
+        0,
+        "Paragraph 1:Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.Paragraph 2:Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida.");
+    wrefresh(inner_win);
+    pthread_mutex_unlock(get_ncurses_mutex());
+
+    head_node = (Node *)malloc(sizeof(Node));
+    if(!head_node)
+    {
+        exit(EXIT_FAILURE);
+    }
+
+    cur_node = head_node;
 
     flags = fcntl(args->fd, F_GETFL, 0);
     fcntl(args->fd, F_SETFL, flags & ~O_NONBLOCK);
@@ -140,11 +210,16 @@ _Noreturn void *chat_log_thread(void *arg)
         // if data is read
         if(read_bytes > 0)
         {
+            pthread_mutex_lock(get_ncurses_mutex());
+            clear_text_window(inner_win);
+            pthread_mutex_unlock(get_ncurses_mutex());
+
             status = confirm_CHT_success(read_buffer);
             if(status == -1)
             {
                 pthread_mutex_lock(get_ncurses_mutex());
                 mvwprintw(inner_win, print_line, 0, "Not cht");
+                wrefresh(inner_win);
                 pthread_mutex_unlock(get_ncurses_mutex());
             }
             else
@@ -153,14 +228,19 @@ _Noreturn void *chat_log_thread(void *arg)
                 incoming_chat = read_chat_broadcast(read_buffer);
 
                 // MAKE NODES
-                head_node->next = add_message_to_LL(incoming_chat->content);
+                cur_node->next = add_message_to_LL(incoming_chat->content, incoming_chat->username);
                 log_LL(head_node, filefd);
 
                 // update chat log in critical section
-                pthread_mutex_lock(get_ncurses_mutex());
-                mvwprintw(inner_win, print_line, 0, "%s: %s", incoming_chat->username, incoming_chat->content);
-                wrefresh(inner_win);
-                pthread_mutex_unlock(get_ncurses_mutex());
+                // pthread_mutex_lock(get_ncurses_mutex());
+                // mvwprintw(inner_win, print_line, 0, "%s: %s", incoming_chat->username, incoming_chat->content);
+                // wrefresh(inner_win);
+                // pthread_mutex_unlock(get_ncurses_mutex());
+
+                clear_text_window(inner_win);
+                show_messages(inner_win, head_node);
+
+                cur_node = cur_node->next;
 
                 // update current line printing to and clear read buffer
                 if(read_bytes > 70)    // NOLINT
@@ -195,8 +275,8 @@ _Noreturn void *chat_log_thread(void *arg)
 
     // free_nodes(head_node);
 
-    delwin(chat_log_win);
-    endwin();
+    // delwin(chat_log_win);
+    // endwin();
 }
 
 // initializes the chat screen where messages are send and recieved
@@ -458,7 +538,7 @@ void chat_log_box(WINDOW **win, WINDOW **inner)
     *win = newwin(height, width, starty, startx);
     draw_box(*win);
 
-    *inner = derwin(*win, height - 2, width - 2, 0, 1);
+    *inner = derwin(*win, height - 2, width - 2, 1, 1);
 
     wrefresh(*win);
     wrefresh(*inner);
