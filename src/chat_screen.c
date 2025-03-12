@@ -257,10 +257,6 @@ void chat_input(WINDOW *win, const uint16_t user_id, uint8_t *username, int sock
             break;
         }
 
-        // if(ch == ERR)
-        // {
-        //     continue;
-        // }
         // if character is not backspace, enter key or CTRL-C
         if((ch != 127 && ch != KEY_BACKSPACE && ch != '\n' && ch != 3) && (size_t)i < sizeof(message_text) - 1)    // NOLINT
         {
