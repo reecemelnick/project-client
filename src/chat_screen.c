@@ -16,6 +16,8 @@
 #define INPUT_BUFFER_SIZE 100
 #define PACKETLEN 777
 
+// #define CHT_RECV_LEN 9
+
 // #define TIMEOUT 500
 
 // #define TIMESTAMP_SIZE 15
@@ -35,6 +37,7 @@ void                    log_LL(Node *head_node, int filefd);
 void                    free_nodes(Node *head_node);
 void                    clear_text_window(WINDOW *win);
 void                    show_messages(WINDOW *win, Node *head);
+Node                   *shift_nodes(Node *head);
 
 struct thread_args
 {
@@ -45,8 +48,9 @@ Node *add_message_to_LL(const uint8_t *message, const uint8_t *username)
 {
     size_t message_len;
     size_t username_len;
+    size_t len;
     Node  *new_node;
-    size_t total_len;
+    size_t pos;
 
     if(!message || !username)
     {
@@ -56,7 +60,7 @@ Node *add_message_to_LL(const uint8_t *message, const uint8_t *username)
     message_len  = strlen((const char *)message);
     username_len = strlen((const char *)username);
 
-    total_len = username_len + 2 + message_len + 1;
+    len = message_len + 1 + username_len + 1;
 
     new_node = (Node *)malloc(sizeof(Node));
     if(!new_node)
@@ -64,18 +68,39 @@ Node *add_message_to_LL(const uint8_t *message, const uint8_t *username)
         exit(EXIT_FAILURE);
     }
 
-    new_node->data = (char *)malloc(total_len);
+    new_node->data = (char *)malloc(len);
     if(!new_node->data)
     {
         free(new_node);
         exit(EXIT_FAILURE);
     }
 
-    snprintf(new_node->data, total_len, "%s: %s", username, message);
+    pos = 0;
+
+    memcpy(new_node->data, username, username_len);
+    pos += username_len;
+
+    new_node->data[pos] = ':';
+    pos += 1;
+
+    memcpy(new_node->data + pos, message, message_len);
+    pos += message_len;
+
+    new_node->data[pos] = '\0';
 
     new_node->next = NULL;
 
     return new_node;
+}
+
+Node *shift_nodes(Node *head)
+{
+    Node *temp;
+    temp = head;
+    head = head->next;
+    free(temp);
+
+    return head;
 }
 
 void log_LL(Node *head_node, int filefd)
@@ -112,10 +137,8 @@ void show_messages(WINDOW *win, Node *head)
 
     while(itr != NULL)
     {
-        pthread_mutex_lock(get_ncurses_mutex());
         mvwprintw(win, print_line, 0, "%s", itr->data);
         wrefresh(win);
-        pthread_mutex_unlock(get_ncurses_mutex());
         print_line++;
         itr = itr->next;
     }
@@ -157,7 +180,7 @@ _Noreturn void *chat_log_thread(void *arg)
     const char               *file_path;
     Node                     *head_node;
     Node                     *cur_node;
-    int                       flags;
+    struct pollfd             fds[1];
 
     // make new ncurses window and inialize it with chat_log_box
     WINDOW *chat_log_win = NULL;
@@ -165,12 +188,15 @@ _Noreturn void *chat_log_thread(void *arg)
 
     print_line = 1;
 
+    fds[0].fd     = args->fd;
+    fds[0].events = POLLIN;
+
     pthread_mutex_lock(get_ncurses_mutex());
     chat_log_box(&chat_log_win, &inner_win);
     pthread_mutex_unlock(get_ncurses_mutex());
 
     // logging file
-    file_path = "/home/reece/Desktop/log.txt";
+    file_path = "/Users/reecemelnick/Desktop/log.txt";
     filefd    = open(file_path, O_WRONLY | O_CLOEXEC | O_APPEND);
     if(filefd == -1)
     {
@@ -180,15 +206,6 @@ _Noreturn void *chat_log_thread(void *arg)
         pthread_mutex_unlock(get_ncurses_mutex());
     }
 
-    pthread_mutex_lock(get_ncurses_mutex());
-    mvwprintw(
-        inner_win,
-        2,
-        0,
-        "Paragraph 1:Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.Paragraph 2:Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida.");
-    wrefresh(inner_win);
-    pthread_mutex_unlock(get_ncurses_mutex());
-
     head_node = (Node *)malloc(sizeof(Node));
     if(!head_node)
     {
@@ -197,48 +214,59 @@ _Noreturn void *chat_log_thread(void *arg)
 
     cur_node = head_node;
 
-    flags = fcntl(args->fd, F_GETFL, 0);
-    fcntl(args->fd, F_SETFL, flags & ~O_NONBLOCK);
-
     // continous loop reading broadcast messages from server
     while(1)
     {
-        ssize_t read_bytes;    // number of bytes read
-        uint8_t read_buffer[PACKETLEN];
-
-        read_bytes = read(args->fd, read_buffer, PACKETLEN);
-        // if data is read
-        if(read_bytes > 0)
+        int poll_status = poll(fds, 1, 1000);    // NOLINT // Timeout for 1 second
+        if(poll_status == -1)
         {
-            pthread_mutex_lock(get_ncurses_mutex());
-            clear_text_window(inner_win);
-            pthread_mutex_unlock(get_ncurses_mutex());
+            perror("poll");
+            continue;
+        }
 
-            status = confirm_CHT_success(read_buffer);
-            if(status == -1)
+        if(poll_status == 0)
+        {
+            // Timeout - no data, continue the loop
+            continue;
+        }
+
+        if(fds[0].revents & POLLIN)
+        {
+            ssize_t read_bytes;    // number of bytes read
+            uint8_t read_buffer[PACKETLEN];
+
+            read_bytes = read(args->fd, read_buffer, PACKETLEN);
+            // if data is read
+            if(read_bytes > 0)
             {
-                pthread_mutex_lock(get_ncurses_mutex());
-                mvwprintw(inner_win, print_line, 0, "Not cht");
-                wrefresh(inner_win);
-                pthread_mutex_unlock(get_ncurses_mutex());
-            }
-            else
-            {
+                status = confirm_CHT_success(read_buffer);
+                if(status == -1)
+                {
+                    pthread_mutex_lock(get_ncurses_mutex());
+                    mvwprintw(inner_win, print_line, 0, "Not cht");
+                    wrefresh(inner_win);
+                    pthread_mutex_unlock(get_ncurses_mutex());
+                    continue;
+                }
+
                 // create chat struct from input
                 incoming_chat = read_chat_broadcast(read_buffer);
+                memset(read_buffer, 0, sizeof(read_buffer));
 
                 // MAKE NODES
                 cur_node->next = add_message_to_LL(incoming_chat->content, incoming_chat->username);
                 log_LL(head_node, filefd);
 
-                // update chat log in critical section
-                // pthread_mutex_lock(get_ncurses_mutex());
-                // mvwprintw(inner_win, print_line, 0, "%s: %s", incoming_chat->username, incoming_chat->content);
-                // wrefresh(inner_win);
-                // pthread_mutex_unlock(get_ncurses_mutex());
+                // cleanup
+                free(incoming_chat->content);
+                free(incoming_chat->timestamp);
+                free(incoming_chat->username);
+                free(incoming_chat);
 
+                pthread_mutex_lock(get_ncurses_mutex());
                 clear_text_window(inner_win);
                 show_messages(inner_win, head_node);
+                pthread_mutex_unlock(get_ncurses_mutex());
 
                 cur_node = cur_node->next;
 
@@ -252,24 +280,21 @@ _Noreturn void *chat_log_thread(void *arg)
                     print_line++;
                 }
 
-                // cleanup
-                free(incoming_chat->content);
-                free(incoming_chat->timestamp);
-                free(incoming_chat->username);
-                free(incoming_chat);
+                if(print_line > 27)    // NOLINT
+                {
+                    head_node = shift_nodes(head_node);
+                }
             }
-
-            memset(read_buffer, 0, sizeof(read_buffer));
-        }
-        else if(read_bytes == 0)
-        {
-            // connection closed
-            continue;
-        }
-        else if(errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK)
-        {
-            perror("read");
-            continue;
+            else if(read_bytes == 0)
+            {
+                // connection closed
+                continue;
+            }
+            else if(errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK)
+            {
+                perror("read");
+                continue;
+            }
         }
     }
 
