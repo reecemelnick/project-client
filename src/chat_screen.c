@@ -15,16 +15,75 @@
 
 #define INPUT_BUFFER_SIZE 100
 #define PACKETLEN 777
-#define POLL_TIMEOUT 500
+
+// #define TIMEOUT 500
+
 // #define TIMESTAMP_SIZE 15
+
+typedef struct Node
+{
+    // message data
+    char *data;
+
+    // next message in list
+    struct Node *next;
+} Node;
 
 static pthread_mutex_t *get_ncurses_mutex(void);
 void                    make_chat_input_box(WINDOW **win, char *username, uint16_t user_id, int *cursor_pos);
+Node                   *add_message_to_LL(uint8_t *message);
+void                    log_LL(Node *head_node, int filefd);
+void                    free_nodes(Node *head_node);
 
 struct thread_args
 {
     int fd;
 };
+
+Node *add_message_to_LL(uint8_t *message)
+{
+    Node *new_node = (Node *)malloc(sizeof(Node));
+    if(!new_node)
+    {
+        exit(EXIT_FAILURE);
+    }
+    new_node->data = (char *)message;
+    new_node->next = NULL;
+
+    return new_node;
+}
+
+void log_LL(Node *head_node, int filefd)
+{
+    Node *itr;
+    itr = head_node->next;
+    while(itr != NULL)
+    {
+        if(filefd != -1)
+        {
+            write(filefd, itr->data, strlen((char *)itr->data));    // NOLINT
+            write(filefd, "\n", 1);
+            itr = itr->next;
+        }
+    }
+}
+
+// void free_nodes(Node *head_node)
+// {
+//     Node *itr;
+//     Node *cur;
+//     itr = head_node;
+//     cur = itr->next;
+//     while(cur != NULL || itr->next != NULL)
+//     {
+//         free(itr);
+//         itr = cur;
+//         if(cur->next != NULL)
+//         {
+//             cur = cur->next;
+//         }
+//     }
+// }
 
 // returns a mutex to ensure only one thread modifes the ncures envrionment at once
 // without this it spits undefined stuff everywhere
@@ -35,101 +94,109 @@ static pthread_mutex_t *get_ncurses_mutex(void)
 }
 
 // thread funciton that polls server for messages
-void *chat_log_thread(void *arg)
+_Noreturn void *chat_log_thread(void *arg)
 {
     int                       status;
-    struct pollfd             fds;                                 // pollfd structure that will contain server fd
     int                       print_line;                          // stores the current line to print message to
     struct CHT_Send          *incoming_chat;                       // chat struct that will store values of values of chat broadcast
     const struct thread_args *args = (struct thread_args *)arg;    // structure holding thread parameters
+    int                       filefd;
+    const char               *file_path;
+    Node                     *head_node;
+    int                       flags;
 
     // make new ncurses window and inialize it with chat_log_box
     WINDOW *chat_log_win = NULL;
     WINDOW *inner_win    = NULL;
+
+    print_line = 1;
+
     pthread_mutex_lock(get_ncurses_mutex());
     chat_log_box(&chat_log_win, &inner_win);
     pthread_mutex_unlock(get_ncurses_mutex());
 
-    fds.fd     = args->fd;
-    fds.events = POLLIN;
+    // logging file
+    file_path = "/Users/reecemelnick/Desktop/log.txt";
+    filefd    = open(file_path, O_WRONLY | O_CLOEXEC | O_APPEND);
+    if(filefd == -1)
+    {
+        pthread_mutex_lock(get_ncurses_mutex());
+        mvwprintw(inner_win, print_line, 0, "Failed to open file");
+        pthread_mutex_unlock(get_ncurses_mutex());
+    }
 
-    print_line = 1;
+    head_node = add_message_to_LL(NULL);
+
+    flags = fcntl(args->fd, F_GETFL, 0);
+    fcntl(args->fd, F_SETFL, flags & ~O_NONBLOCK);
 
     // continous loop reading broadcast messages from server
     while(1)
     {
-        int ret = poll(&fds, 1, POLL_TIMEOUT);    // poll with timeout of 500ms
+        ssize_t read_bytes;    // number of bytes read
+        uint8_t read_buffer[PACKETLEN];
 
-        // if poll fails exit error
-        if(ret < 0 && errno != EINTR)
+        read_bytes = read(args->fd, read_buffer, PACKETLEN);
+        // if data is read
+        if(read_bytes > 0)
         {
-            perror("poll");
-            break;
-        }
-
-        // if socket has incoming data
-        if(fds.revents & POLLIN)
-        {
-            ssize_t read_bytes;    // number of bytes read
-            uint8_t read_buffer[PACKETLEN];
-
-            read_bytes = read(args->fd, read_buffer, PACKETLEN);
-            // if data is read
-            if(read_bytes > 0)
+            status = confirm_CHT_success(read_buffer);
+            if(status == -1)
             {
-                status = confirm_CHT_success(read_buffer);
-                if(status == -1)
+                pthread_mutex_lock(get_ncurses_mutex());
+                mvwprintw(inner_win, print_line, 0, "Not cht");
+                pthread_mutex_unlock(get_ncurses_mutex());
+            }
+            else
+            {
+                // create chat struct from input
+                incoming_chat = read_chat_broadcast(read_buffer);
+
+                // MAKE NODES
+                head_node->next = add_message_to_LL(incoming_chat->content);
+                log_LL(head_node, filefd);
+
+                // update chat log in critical section
+                pthread_mutex_lock(get_ncurses_mutex());
+                mvwprintw(inner_win, print_line, 0, "%s: %s", incoming_chat->username, incoming_chat->content);
+                wrefresh(inner_win);
+                pthread_mutex_unlock(get_ncurses_mutex());
+
+                // update current line printing to and clear read buffer
+                if(read_bytes > 70)    // NOLINT
                 {
-                    // HANDLE FAIL
+                    print_line += 2;
                 }
                 else
                 {
-                    read_buffer[read_bytes] = '\0';
-                    // create chat struct from input
-                    incoming_chat = read_chat_broadcast(read_buffer);
-
-                    // update chat log in critical section
-                    pthread_mutex_lock(get_ncurses_mutex());
-                    mvwprintw(inner_win, print_line, 0, "%s: %s", incoming_chat->username, incoming_chat->content);
-                    // mvwprintw(chat_log_win, print_line, 1, "hey");
-                    wrefresh(inner_win);
-                    pthread_mutex_unlock(get_ncurses_mutex());
-
-                    // update current line printing to and clear read buffer
-                    if(read_bytes > 70)    // NOLINT
-                    {
-                        print_line += 2;
-                    }
-                    else
-                    {
-                        print_line++;
-                    }
-
-                    // cleanup
-                    free(incoming_chat->content);
-                    free(incoming_chat->timestamp);
-                    free(incoming_chat->username);
-                    free(incoming_chat);
+                    print_line++;
                 }
 
-                memset(read_buffer, 0, sizeof(read_buffer));
+                // cleanup
+                free(incoming_chat->content);
+                free(incoming_chat->timestamp);
+                free(incoming_chat->username);
+                free(incoming_chat);
             }
-            else if(read_bytes == 0)
-            {
-                // connection closed
-                continue;
-            }
-            else if(errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK)
-            {
-                perror("read");
-                continue;
-            }
+
+            memset(read_buffer, 0, sizeof(read_buffer));
+        }
+        else if(read_bytes == 0)
+        {
+            // connection closed
+            continue;
+        }
+        else if(errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK)
+        {
+            perror("read");
+            continue;
         }
     }
 
+    // free_nodes(head_node);
+
     delwin(chat_log_win);
     endwin();
-    return NULL;
 }
 
 // initializes the chat screen where messages are send and recieved
