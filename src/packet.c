@@ -492,13 +492,13 @@ uint8_t *construct_cht_payload(struct CHT_Send *cht_packet)
 }
 
 // --------------------------------- end ---------------------------------
-void make_logout_req(int server_fd)
+void make_logout_req(int server_fd, uint16_t sender_id)
 {
     const uint8_t packet_type = 0x0C;
     // TODO: change versions accordingly
     const uint8_t version = VERSION;
     // TODO: temporary, hardcoded sender id
-    const uint16_t sender_id   = 0x0001;
+    // const uint16_t sender_id   = sender_id;
     const uint16_t payload_len = 0x0000;
     struct Message logout_message;
 

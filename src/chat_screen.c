@@ -186,7 +186,7 @@ void build_chat_struct(struct CHT_Send *new_chat, struct Message *chat_header, c
     // populate packet header
     chat_header->packet_type = CHT_Send;
     chat_header->sender_id   = id;
-    chat_header->version     = 2;
+    chat_header->version     = VERSION;
 
     // set CHT_Send header
     new_chat->message = chat_header;

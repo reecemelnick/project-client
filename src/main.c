@@ -58,6 +58,7 @@ bool handle_login_res(struct Message incoming_message, const uint8_t *incoming_s
         get_user_id(incoming_stream, &incoming_message.sender_id);
         printf("user idddd: %d\n", incoming_message.sender_id);
         start_chat_screen(incoming_message.sender_id, username, sockfd);
+        make_logout_req(sockfd, incoming_message.sender_id);
         return true;
     }
 
@@ -306,7 +307,6 @@ int main(int argc, char *argv[])
 
     printf("client ran successfully\n");
 cleanup:
-    make_logout_req(net_socket.sockfd);
 
     // free(connection_message.active_server_ip);
     if(net_socket.address != NULL)
