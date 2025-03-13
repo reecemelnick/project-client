@@ -69,7 +69,7 @@ int display_menu(void)
     mvwprintw(win, 1, 2, "Select");
     keypad(win, TRUE);
 
-    while(1)
+    while(!terminate)
     {
         if(choice == KEY_RIGHT)
         {

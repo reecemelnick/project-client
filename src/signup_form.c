@@ -61,13 +61,16 @@ void start_signup_form(struct ACC_Create_Login *acc_create, int setting, int *er
     // used to determine how long username and password are
     i = 0;
     j = 0;
-
-    while(inputting_info)
+    while(inputting_info && !terminate)
     {
         int ch;
 
         while((ch = wgetch(win)))
         {
+            if(terminate)
+            {
+                break;
+            }
             // make sure character is alpha numeric and within limit of username
             if(isalnum(ch) && i < sizeof(username) - 1)
             {
@@ -100,8 +103,17 @@ void start_signup_form(struct ACC_Create_Login *acc_create, int setting, int *er
             }
         }
 
+        if(terminate)
+        {
+            break;
+        }
+
         while((ch = wgetch(win)))
         {    // read password character-by-character
+            if(terminate)
+            {
+                break;
+            }
             if(isalnum(ch) && j < sizeof(password) - 1)
             {
                 password[j++] = (char)ch;
@@ -148,5 +160,9 @@ void start_signup_form(struct ACC_Create_Login *acc_create, int setting, int *er
     delwin(win);
     endwin();
 
-    convert_username_password(acc_create, username, password, err);
+    // if user did not request to terminate then
+    if(!terminate)
+    {
+        convert_username_password(acc_create, username, password, err);
+    }
 }

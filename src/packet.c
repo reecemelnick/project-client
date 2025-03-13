@@ -253,7 +253,7 @@ void parse_response_header(const uint8_t *byte_stream, struct Message *incoming_
     version = byte_stream[position];
     if(version != 2)
     {
-        printf("verion: create and send error packet");
+        printf("version: create and send error packet");
         exit(EXIT_FAILURE);
     }
     incoming_message->version = version;
@@ -328,7 +328,30 @@ void send_and_serialize_connection_message(const int server_manager_fd, const st
     send_packet_t(buffer, packet_size);
 
     // send the buffer
-    // send_packet(server_manager_fd, buffer, packet_size); // TODO: uncomment this line
+    send_packet(server_manager_fd, buffer, packet_size);    // TODO: uncomment this line
+}
+
+/*
+    Decodes response from server manager
+*/
+void parse_connection_message_header(const uint8_t *byte_stream, struct ConnectionMessage *incoming_message)
+{
+    uint8_t message_type;
+    uint8_t version;
+    uint8_t server_online;
+    size_t  position;
+
+    position = 0;
+
+    message_type                   = byte_stream[position++];
+    incoming_message->message_type = message_type;
+
+    version                   = byte_stream[position++];
+    incoming_message->version = version;
+
+    server_online                   = byte_stream[position];
+    incoming_message->server_online = server_online;
+    // TODO: check if no active servers main
 }
 
 // ------------------------- messaging functions -------------------------
@@ -457,3 +480,44 @@ uint8_t *construct_cht_payload(struct CHT_Send *cht_packet)
 }
 
 // --------------------------------- end ---------------------------------
+void make_logout_req(int server_fd, uint16_t sender_id)
+{
+    const uint8_t packet_type = 0x0C;
+    // TODO: change versions accordingly
+    const uint8_t version = VERSION;
+    // TODO: temporary, hardcoded sender id
+    // const uint16_t sender_id   = sender_id;
+    const uint16_t payload_len = 0x0000;
+    struct Message logout_message;
+
+    construct_message(&logout_message, packet_type, version, sender_id, payload_len);
+
+    send_and_serialize_message(server_fd, &logout_message);
+}
+
+void send_and_serialize_message(int server_fd, const struct Message *message)
+{
+    size_t   packet_size;
+    uint8_t  buffer[PACKETLEN];
+    uint16_t sender_id;
+    uint16_t payload_len;
+    int      offset = 0;
+
+    packet_size = (size_t)HEADER_SIZE + message->payload_len;
+
+    buffer[offset++] = message->packet_type;
+    buffer[offset++] = message->version;
+
+    sender_id = htons(message->sender_id);
+    memcpy(buffer + offset, &sender_id, sizeof(uint16_t));
+    offset += (int)sizeof(uint16_t);
+
+    payload_len = htons(message->payload_len);
+    memcpy(buffer + offset, &payload_len, sizeof(uint16_t));
+
+    // printing packet
+    printf("Sending logout req packet of size %zu\n", packet_size);
+    send_packet_t(buffer, packet_size);
+
+    send_packet(server_fd, buffer, packet_size);
+}
