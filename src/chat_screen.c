@@ -65,12 +65,14 @@ Node *add_message_to_LL(const uint8_t *message, const uint8_t *username)
     new_node = (Node *)malloc(sizeof(Node));
     if(!new_node)
     {
+        printf("1\n");
         exit(EXIT_FAILURE);
     }
 
     new_node->data = (char *)malloc(len);
     if(!new_node->data)
     {
+        printf("2\n");
         free(new_node);
         exit(EXIT_FAILURE);
     }
@@ -195,6 +197,7 @@ _Noreturn void *chat_log_thread(void *arg)
     head_node = (Node *)malloc(sizeof(Node));
     if(!head_node)
     {
+        printf("3\n");
         exit(EXIT_FAILURE);
     }
 
@@ -289,8 +292,12 @@ _Noreturn void *chat_log_thread(void *arg)
     free_nodes(head_node);
     // free(head_node);
 
+    // pthread_mutex_lock(get_ncurses_mutex());
     delwin(chat_log_win);
+    delwin(inner_win);
     // endwin();
+    // pthread_mutex_unlock(get_ncurses_mutex());
+
     exit(0);
 }
 
@@ -460,6 +467,10 @@ void chat_input(WINDOW *win, const uint16_t user_id, uint8_t *username, int sock
             // populate chat structs and send
             build_chat_struct(&new_chat, &chat_header, (uint8_t *)message_text, username, user_id);
             send_user_message(sockfd, &new_chat);
+
+            free(new_chat.timestamp);
+            free(new_chat.content);
+            free(new_chat.username);
 
             memset(&new_chat, 0, sizeof(new_chat));
             memset(message_text, 0, sizeof(message_text));
