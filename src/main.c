@@ -7,11 +7,13 @@
 #include "start_menu.h"
 #include <ncurses.h>
 
+#define PACKETLEN 777
+
 int     login_or_create(struct Message request_header, int sockfd, int form_type, int *err);
 uint8_t make_login_create_req(struct Message *header, struct ACC_Create_Login request, int form_type);
 void    set_packet_type(int form_type, uint8_t *type);
-bool    handle_login_res(struct Message incoming_message, const uint8_t *incoming_stream, uint8_t *username, int sockfd, int *err);
-bool    handle_create_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err);
+bool    handle_login_res(struct Message incoming_message, const uint8_t *incoming_stream, uint8_t *username, int sockfd);
+bool    handle_create_res(struct Message incoming_message, const uint8_t *incoming_stream);
 
 // Client-ServerManager functions
 void make_ip_req(struct ConnectionMessage *connection_message);
@@ -36,19 +38,17 @@ void set_packet_type(int form_type, uint8_t *type)
 }
 
 // handle login response packet
-bool handle_login_res(struct Message incoming_message, const uint8_t *incoming_stream, uint8_t *username, int sockfd, int *err)
+bool handle_login_res(struct Message incoming_message, const uint8_t *incoming_stream, uint8_t *username, int sockfd)
 {
     if(incoming_message.packet_type == SYS_Error)
     {
-        uint8_t *error_message;    // buffer to hold the error message send from the server
-        uint8_t *error_code;       // error code of response
-        parse_and_extract_message(incoming_stream, &error_message, ERROR_MESSSAGE_INDEX, (size_t)incoming_message.payload_len - ERROR_CODE_ENCODED, err);
+        uint8_t  error_message[PACKETLEN];    // buffer to hold the error message send from the server
+        uint8_t *error_code;                  // error code of response
+        parse_and_extract_message(incoming_stream, error_message, ERROR_MESSSAGE_INDEX, (size_t)incoming_message.payload_len - ERROR_CODE_ENCODED);
 
         error_code = get_error_code(incoming_stream, 1);
 
         display_error_message(error_message, error_code, (size_t)incoming_message.payload_len - 3, 1);
-
-        free(error_message);
         free(error_code);
     }
     else if(incoming_message.packet_type == LOGIN_SUCCESS)
@@ -63,19 +63,18 @@ bool handle_login_res(struct Message incoming_message, const uint8_t *incoming_s
 }
 
 // handle create account response packet
-bool handle_create_res(struct Message incoming_message, const uint8_t *incoming_stream, int *err)
+bool handle_create_res(struct Message incoming_message, const uint8_t *incoming_stream)
 {
     if(incoming_message.packet_type == SYS_Error)
     {
-        uint8_t *error_message;    // buffer to hold the error message send from the server
-        uint8_t *error_code;       // error code of response
-        parse_and_extract_message(incoming_stream, &error_message, ERROR_MESSSAGE_INDEX, (size_t)incoming_message.payload_len - ERROR_CODE_ENCODED, err);
+        uint8_t  error_message[PACKETLEN];    // buffer to hold the error message send from the server
+        uint8_t *error_code;                  // error code of response
+        parse_and_extract_message(incoming_stream, error_message, ERROR_MESSSAGE_INDEX, (size_t)incoming_message.payload_len - ERROR_CODE_ENCODED);
 
         error_code = get_error_code(incoming_stream, 1);
 
         display_error_message(error_message, error_code, (size_t)incoming_message.payload_len - ERROR_CODE_ENCODED, 1);
 
-        free(error_message);
         free(error_code);
     }
     else if(incoming_message.packet_type == SYS_Success)
@@ -114,17 +113,18 @@ uint8_t make_login_create_req(struct Message *header, struct ACC_Create_Login re
 // loop for handling login or create account requests
 int login_or_create(struct Message request_header, int sockfd, int form_type, int *err)
 {
-    struct ACC_Create_Login acc_create_login;    // struct to form account create or login request
-    uint8_t                *incoming_stream;     // buffer to hold the request read from the server
-    size_t                  input_size;          // size of the request packet that was read
-    struct Message          incoming_message;    // struct to store the response header info
-    bool                    success = false;
-    acc_create_login.message        = &request_header;
-    acc_create_login.username       = NULL;
-    acc_create_login.password       = NULL;
+    struct ACC_Create_Login acc_create_login;              // struct to form account create or login request
+    uint8_t                 incoming_stream[PACKETLEN];    // buffer to hold the request read from the server
+    // size_t                  input_size;                    // size of the request packet that was read
+    struct Message incoming_message;    // struct to store the response header info
+    bool           success    = false;
+    acc_create_login.message  = &request_header;
+    acc_create_login.username = NULL;
+    acc_create_login.password = NULL;
 
     while(!success)
     {
+        ssize_t bytes_read;
         uint8_t type;
 
         // one form now, for login and create account
@@ -142,23 +142,27 @@ int login_or_create(struct Message request_header, int sockfd, int form_type, in
         send_and_serialize_ACC_Create_Login(sockfd, &acc_create_login);
 
         // read the response into buffer
-        read_entire_stream(sockfd, &incoming_stream, &input_size, err);
-
-        send_packet_t(incoming_stream, input_size);    // print (TEMP)
+        // read_entire_stream(sockfd, &incoming_stream, &input_size, err);
+        bytes_read = read(sockfd, incoming_stream, PACKETLEN);
+        if(bytes_read < 0)
+        {
+            perror("read");
+            exit(EXIT_FAILURE);
+        }
+        incoming_stream[bytes_read] = '\0';
 
         parse_response_header(incoming_stream, &incoming_message);
 
         if(type == LOGIN_REQUEST)
         {
-            success = handle_login_res(incoming_message, incoming_stream, acc_create_login.username, sockfd, err);
+            success = handle_login_res(incoming_message, incoming_stream, acc_create_login.username, sockfd);
         }
         else if(type == ACCOUNT_CREATE)
         {
-            success = handle_create_res(incoming_message, incoming_stream, err);
+            success = handle_create_res(incoming_message, incoming_stream);
         }
 
         free_acc_create(&acc_create_login);
-        free(incoming_stream);
     }
 
     return *err;

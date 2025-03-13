@@ -27,7 +27,7 @@ void convert_username_password(struct ACC_Create_Login *acc_create, const char *
     string_to_bytes(username, &acc_create->username, len, err);
 
     len = strlen(password);
-    string_to_bytes(username, &acc_create->password, len, err);
+    string_to_bytes(password, &acc_create->password, len, err);
 }
 
 void free_acc_create(struct ACC_Create_Login *acc_create_login)

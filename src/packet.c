@@ -191,19 +191,11 @@ uint8_t *get_error_code(const uint8_t *byte_stream, size_t size)
 }
 
 // get a string from the response header
-void parse_and_extract_message(const uint8_t *byte_stream, uint8_t **message, size_t offset, size_t message_length, int *err)
+void parse_and_extract_message(const uint8_t *byte_stream, uint8_t *message, size_t offset, size_t message_length)
 {
-    // allocate memory
-    *message = (uint8_t *)malloc(message_length * sizeof(uint8_t));
-    if(*message == NULL)
-    {
-        perror("malloc");
-        *err = errno;
-        return;
-    }
-
     // create a copy of byte_stream to work with, starting from offset
-    memcpy(*message, byte_stream + offset, message_length);
+    memcpy(message, byte_stream + offset, message_length);
+    message[message_length] = 0;
 }
 
 uint8_t *parse_and_extract_payload_value(const uint8_t *byte_stream, size_t payload_value_size)
