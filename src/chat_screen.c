@@ -297,8 +297,7 @@ _Noreturn void *chat_log_thread(void *arg)
     delwin(inner_win);
     // endwin();
     // pthread_mutex_unlock(get_ncurses_mutex());
-
-    exit(0);
+    pthread_exit(NULL);
 }
 
 // initializes the chat screen where messages are send and recieved
@@ -335,8 +334,14 @@ int start_chat_screen(const uint16_t user_id, uint8_t *username, int sockfd)
     // read and send chat messages typed by user
     chat_input(chat_input_win, user_id, username, sockfd);
     pthread_mutex_lock(get_ncurses_mutex());
-    delwin(usersWin);
-    delwin(chat_input_win);
+    if(usersWin)
+    {
+        delwin(usersWin);
+    }
+    if(chat_input_win)
+    {
+        delwin(chat_input_win);
+    }
     endwin();
     pthread_mutex_unlock(get_ncurses_mutex());
     return 0;
