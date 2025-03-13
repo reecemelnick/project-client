@@ -176,8 +176,6 @@ _Noreturn void *chat_log_thread(void *arg)
     int                       print_line;                          // stores the current line to print message to
     struct CHT_Send          *incoming_chat;                       // chat struct that will store values of values of chat broadcast
     const struct thread_args *args = (struct thread_args *)arg;    // structure holding thread parameters
-    int                       filefd;
-    const char               *file_path;
     Node                     *head_node;
     Node                     *cur_node;
     struct pollfd             fds[1];
@@ -194,17 +192,6 @@ _Noreturn void *chat_log_thread(void *arg)
     pthread_mutex_lock(get_ncurses_mutex());
     chat_log_box(&chat_log_win, &inner_win);
     pthread_mutex_unlock(get_ncurses_mutex());
-
-    // logging file
-    file_path = "/Users/reecemelnick/Desktop/log.txt";
-    filefd    = open(file_path, O_WRONLY | O_CLOEXEC | O_APPEND);
-    if(filefd == -1)
-    {
-        pthread_mutex_lock(get_ncurses_mutex());
-        mvwprintw(inner_win, print_line, 0, "Failed to open file");
-        wrefresh(inner_win);
-        pthread_mutex_unlock(get_ncurses_mutex());
-    }
 
     head_node = (Node *)malloc(sizeof(Node));
     if(!head_node)
@@ -255,7 +242,6 @@ _Noreturn void *chat_log_thread(void *arg)
 
                 // MAKE NODES
                 cur_node->next = add_message_to_LL(incoming_chat->content, incoming_chat->username);
-                log_LL(head_node, filefd);
 
                 // cleanup
                 free(incoming_chat->content);
