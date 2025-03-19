@@ -15,7 +15,6 @@
 #define HEADER_SIZE 6
 #define CONNECTION_MSG_LEN 2
 #define TIMEOUT 100000
-#define PACKETLEN 777
 #define IDINDEX_LOGIN 8
 
 // #define PAYLOADINDEX 6
@@ -298,12 +297,11 @@ int set_fd_non_blocking(int fd)
     return 0;
 }
 
-void construct_connection_message(struct ConnectionMessage *connection_message, uint8_t message_type, uint8_t version, uint8_t server_online, uint8_t *active_server_ip)
+void construct_connection_message(struct ConnectionMessage *connection_message, uint8_t message_type, uint8_t version, uint8_t server_online)
 {
-    connection_message->message_type     = message_type;
-    connection_message->version          = version;
-    connection_message->server_online    = server_online;
-    connection_message->active_server_ip = active_server_ip;
+    connection_message->message_type  = message_type;
+    connection_message->version       = version;
+    connection_message->server_online = server_online;
 }
 
 /*
@@ -520,4 +518,5 @@ void send_and_serialize_message(int server_fd, const struct Message *message)
     send_packet_t(buffer, packet_size);
 
     send_packet(server_fd, buffer, packet_size);
+    printf("testing\n");
 }

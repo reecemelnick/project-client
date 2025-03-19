@@ -4,6 +4,7 @@
 #define ERROR_MESSSAGE_INDEX 11
 #define ERROR_CODE_ENCODED 3
 #define VERSION 0x02
+#define PACKETLEN 777
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -20,9 +21,9 @@ struct ConnectionMessage {
     // cppcheck-suppress unusedStructMember
     uint8_t server_online;
     // cppcheck-suppress unusedStructMember
-    uint8_t *active_server_ip;
+    uint8_t active_server_ip[PACKETLEN];
     // cppcheck-suppress unusedStructMember
-    uint8_t *active_server_port;
+    uint8_t active_server_port[PACKETLEN];
     };
 // end Client Connection Protocol
 // ====================
