@@ -238,10 +238,10 @@ _Noreturn void *chat_log_thread(void *arg)
                 status = confirm_CHT_success(read_buffer);
                 if(status == -1)
                 {
-                    pthread_mutex_lock(get_ncurses_mutex());
-                    mvwprintw(inner_win, print_line, 0, "Not cht");
-                    wrefresh(inner_win);
-                    pthread_mutex_unlock(get_ncurses_mutex());
+                    // pthread_mutex_lock(get_ncurses_mutex());
+                    // mvwprintw(inner_win, print_line, 0, "Not cht");
+                    // wrefresh(inner_win);
+                    // pthread_mutex_unlock(get_ncurses_mutex());
                     continue;
                 }
 
