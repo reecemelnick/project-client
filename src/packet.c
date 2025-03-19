@@ -250,7 +250,7 @@ void parse_response_header(const uint8_t *byte_stream, struct Message *incoming_
     ++position;
 
     version = byte_stream[position];
-    if(version != 2)
+    if(version != VERSION)
     {
         printf("version: create and send error packet");
         exit(EXIT_FAILURE);

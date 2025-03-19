@@ -184,7 +184,7 @@ void make_ip_req(const int server_manager_fd, struct ConnectionMessage *connecti
     // connection_message->active_server_ip = [PACKETLEN];
 
     message_type = 0x00;
-    version      = 0x01;
+    version      = VERSION;
 
     construct_connection_message(connection_message, message_type, version, 0x00);
 
