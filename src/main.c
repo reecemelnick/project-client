@@ -325,5 +325,5 @@ cleanup:
     // }
     close(net_socket.sockfd);
 done:
-    return 0;
+    exit(EXIT_SUCCESS);
 }

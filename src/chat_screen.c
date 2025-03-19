@@ -32,7 +32,7 @@ typedef struct Node
 
 static pthread_mutex_t *get_ncurses_mutex(void);
 void                    make_chat_input_box(WINDOW **win, char *username, uint16_t user_id, int *cursor_pos);
-Node                   *add_message_to_LL(const uint8_t *message, const uint8_t *username);
+Node                   *add_message_to_LL(uint8_t *message, uint8_t *username);
 void                    log_LL(Node *head_node, int filefd);
 void                    free_nodes(Node *head_node);
 void                    clear_text_window(WINDOW *win);
@@ -44,7 +44,7 @@ struct thread_args
     int fd;
 };
 
-Node *add_message_to_LL(const uint8_t *message, const uint8_t *username)
+Node *add_message_to_LL(uint8_t *message, uint8_t *username)
 {
     size_t message_len;
     size_t username_len;
@@ -66,6 +66,8 @@ Node *add_message_to_LL(const uint8_t *message, const uint8_t *username)
     if(!new_node)
     {
         printf("1\n");
+        free(message);
+        free(username);
         exit(EXIT_FAILURE);
     }
 
@@ -73,6 +75,8 @@ Node *add_message_to_LL(const uint8_t *message, const uint8_t *username)
     if(!new_node->data)
     {
         printf("2\n");
+        free(message);
+        free(username);
         free(new_node);
         exit(EXIT_FAILURE);
     }
@@ -330,9 +334,11 @@ int start_chat_screen(const uint16_t user_id, uint8_t *username, int sockfd)
         perror("pthread_create failed");
         return EXIT_FAILURE;
     }
-    pthread_detach(chat_box_thread);
+    // pthread_detach(chat_box_thread);
     // read and send chat messages typed by user
     chat_input(chat_input_win, user_id, username, sockfd);
+    pthread_join(chat_box_thread, NULL);
+
     pthread_mutex_lock(get_ncurses_mutex());
     if(usersWin)
     {
