@@ -32,7 +32,7 @@ typedef struct Node
 
 static pthread_mutex_t *get_ncurses_mutex(void);
 void                    make_chat_input_box(WINDOW **win, char *username, uint16_t user_id, int *cursor_pos);
-Node                   *add_message_to_LL(uint8_t *message, uint8_t *username);
+Node                   *add_message_to_LL(const uint8_t *message, const uint8_t *username);
 void                    log_LL(Node *head_node, int filefd);
 void                    free_nodes(Node *head_node);
 void                    clear_text_window(WINDOW *win);
@@ -44,7 +44,7 @@ struct thread_args
     int fd;
 };
 
-Node *add_message_to_LL(uint8_t *message, uint8_t *username)
+Node *add_message_to_LL(const uint8_t *message, const uint8_t *username)
 {
     size_t message_len;
     size_t username_len;
@@ -65,20 +65,20 @@ Node *add_message_to_LL(uint8_t *message, uint8_t *username)
     new_node = (Node *)malloc(sizeof(Node));
     if(!new_node)
     {
-        printf("1\n");
-        free(message);
-        free(username);
-        exit(EXIT_FAILURE);
+        // free(message);
+        // free(username);
+        // exit(EXIT_FAILURE);
+        return NULL;
     }
 
     new_node->data = (char *)malloc(len);
     if(!new_node->data)
     {
-        printf("2\n");
-        free(message);
-        free(username);
+        // free(message);
+        // free(username);
+        // exit(EXIT_FAILURE);
         free(new_node);
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 
     pos = 0;
@@ -104,6 +104,7 @@ Node *shift_nodes(Node *head)
     Node *temp;
     temp = head;
     head = head->next;
+    free(temp->data);
     free(temp);
 
     return head;
@@ -201,7 +202,6 @@ _Noreturn void *chat_log_thread(void *arg)
     head_node = (Node *)malloc(sizeof(Node));
     if(!head_node)
     {
-        printf("3\n");
         exit(EXIT_FAILURE);
     }
 
@@ -251,6 +251,15 @@ _Noreturn void *chat_log_thread(void *arg)
 
                 // MAKE NODES
                 cur_node->next = add_message_to_LL(incoming_chat->content, incoming_chat->username);
+                if(!cur_node->next)
+                {
+                    free(incoming_chat->content);
+                    free(incoming_chat->timestamp);
+                    free(incoming_chat->username);
+                    free(incoming_chat);
+                    terminate = 1;
+                    break;
+                }
 
                 // cleanup
                 free(incoming_chat->content);
@@ -441,7 +450,6 @@ void chat_input(WINDOW *win, const uint16_t user_id, uint8_t *username, int sock
 
         if(terminate)    // Exit immediately if terminate is set
         {
-            printf("Exiting chat input\n");
             break;
         }
 
