@@ -1,17 +1,12 @@
 #include "chat_screen.h"
 #include "error_message.h"
+#include "login_signup.h"
 #include "messages.h"
 #include "packet.h"
 #include "signals.h"
 #include "signup_form.h"
 #include "start_menu.h"
 #include <ncurses.h>
-
-int     login_or_create(struct Message request_header, int sockfd, int form_type, int *err);
-uint8_t make_login_create_req(struct Message *header, struct ACC_Create_Login request, int form_type);
-void    set_packet_type(int form_type, uint8_t *type);
-bool    handle_login_res(struct Message incoming_message, const uint8_t *incoming_stream, uint8_t *username, int sockfd);
-bool    handle_create_res(struct Message incoming_message, const uint8_t *incoming_stream);
 
 // Client-ServerManager functions
 void make_ip_req(int server_manager_fd, struct ConnectionMessage *connection_message, int *err);
