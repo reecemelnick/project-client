@@ -360,6 +360,69 @@ void parse_connection_message_header(const uint8_t *byte_stream, struct Connecti
     NOTE: written assuming that we know that a chat message is incomming and we know the protocol
 */
 
+// populate CHT_Send struct
+void build_chat_struct(struct CHT_Send *new_chat, struct Message *chat_header, const uint8_t *message, const uint8_t *username, uint16_t id)
+{
+    uint8_t timestamp_buf[PACKETLEN];
+    uint8_t content_buf[PACKETLEN];
+    uint8_t username_buf[PACKETLEN];
+    size_t  payload_len  = 0;
+    size_t  message_len  = strlen((const char *)message);
+    size_t  username_len = strlen((const char *)username);
+
+    // HARDCODED: need to change
+    uint8_t timestamp[]   = {0x32, 0x30, 0x32, 0x35, 0x30, 0x33, 0x30, 0x34, 0x30, 0x33, 0x30, 0x39, 0x30, 0x36, 0x5a};    // NOLINT
+    size_t  timestamp_len = sizeof(timestamp);
+
+    // size_t  timestamp_len             = TIMESTAMP_SIZE;
+    // uint8_t timestamp[TIMESTAMP_SIZE] = {0};
+    // get_generalized_time(&timestamp, TIMESTAMP_SIZE);
+
+    // populate packet header
+    chat_header->packet_type = CHT_Send;
+    chat_header->sender_id   = id;
+    chat_header->version     = VERSION;
+
+    // set CHT_Send header
+    new_chat->message = chat_header;
+
+    // allocate space for all payload fields
+    new_chat->timestamp = (uint8_t *)malloc(timestamp_len + 2);
+    new_chat->content   = (uint8_t *)malloc(message_len + 2);
+    new_chat->username  = (uint8_t *)malloc(username_len + 2);
+
+    if(new_chat->timestamp == NULL || new_chat->content == NULL || new_chat->username == NULL)
+    {
+        perror("Failed to allocate memory");
+        free(new_chat->timestamp);
+        free(new_chat->content);
+        free(new_chat->username);
+        return;
+    }
+
+    // populate encoded timestamp
+    timestamp_buf[0] = GENTIME;
+    timestamp_buf[1] = (uint8_t)timestamp_len;
+    memcpy(timestamp_buf + 2, timestamp, timestamp_len);
+    memcpy(new_chat->timestamp, timestamp_buf, timestamp_len + 2);
+
+    // populate encoded content
+    content_buf[0] = UTF8STRING;
+    content_buf[1] = (uint8_t)strlen((const char *)message);
+    memcpy(content_buf + 2, message, strlen((const char *)message));
+    memcpy(new_chat->content, content_buf, strlen((const char *)message) + 2);
+
+    // populate encoded username
+    username_buf[0] = UTF8STRING;
+    username_buf[1] = (uint8_t)username_len;
+    memcpy(username_buf + 2, username, username_len);
+    memcpy(new_chat->username, username_buf, username_len + 2);
+
+    // set payload length
+    payload_len += (message_len + 2) + (timestamp_len + 2) + (strlen((const char *)username) + 2);
+    chat_header->payload_len = (uint8_t)payload_len;
+}
+
 struct CHT_Send *read_chat_broadcast(const uint8_t *byte_stream)
 {
     struct CHT_Send *incoming_chat;

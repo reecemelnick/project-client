@@ -19,6 +19,9 @@
         "utility": "c",
         "system_error": "c",
         "messages.h": "c",
-        "chrono": "c"
+        "chrono": "c",
+        "signup_form.h": "c",
+        "signals.h": "c",
+        "error_message.h": "c"
     }
 }
