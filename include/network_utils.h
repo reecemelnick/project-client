@@ -14,6 +14,7 @@
 // TODO: change these ports accordingly to server/sm if needed
 #define SM_PORT 8080
 #define SERVER_PORT 8000    // temporary, sm does not send back ip and port currently
+#define BASE 10
 
 struct socket_network
 {
@@ -26,7 +27,7 @@ struct socket_network
     // cppcheck-suppress unusedStructMember
     socklen_t addr_len;
     // cppcheck-suppress unusedStructMember
-    uint16_t port;
+    char *port;
 };
 
 void handle_arguments(int argc, char *argv[], struct socket_network *net_socket, int *err);

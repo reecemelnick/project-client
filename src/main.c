@@ -76,11 +76,11 @@ void make_ip_req(const int server_manager_fd, struct ConnectionMessage *connecti
 int main(int argc, char *argv[])
 {
     struct socket_network net_socket;    // network socket info
-    // int                   res;
-    // struct Message        request_header = {0};    // struct to form request header
-    struct ConnectionMessage connection_message = {0};
-    int                      err                = 0;
-    net_socket.port                             = SM_PORT;
+    int                   res;
+    struct Message        request_header = {0};    // struct to form request header
+    // struct ConnectionMessage connection_message = {0};
+    int err = 0;
+    // net_socket.port                             = SM_PORT;
     // net_socket.port = SERVER_PORT;
 
     // connection_message.active_server_ip = NULL;
@@ -92,67 +92,67 @@ int main(int argc, char *argv[])
     }
 
     // socket initialization (sm)
-    setup_socket(&net_socket, &err);
-    if(err != 0)
-    {
-        goto cleanup;
-    }
-
-    // client-sm communication
-    net_socket.address = NULL;    // set to null, unneeded
-
-    // send active server ip request
-    make_ip_req(net_socket.sockfd, &connection_message, &err);
-    if(err != 0)
-    {
-        goto cleanup;
-    }
-    // TODO: uncomment this when sm is done
-    if(connection_message.server_online == 0)
-    {
-        printf("No active server.\n");
-        goto cleanup;
-    }
-
-    // close(net_socket.sockfd);
-    // end connection with sm
-
-    // TODO: must connect to server ip and port provided from sm
-    // net_socket.address = (char *)connection_message.active_server_ip; // uncomment this line
-    // net_socket.port = (char *)connection_message.port;
-
-    // net_socket.address = strdup("127.0.0.2");    // TODO: change this to appropriate server ip
-    // net_socket.port    = SERVER_PORT;
-
-    // socket initialization (server)
     // setup_socket(&net_socket, &err);
     // if(err != 0)
     // {
     //     goto cleanup;
     // }
 
-    // setup_signal(sigint_handler, SIGINT, &err);
+    // // client-sm communication
+    // net_socket.address = NULL;    // set to null, unneeded
+
+    // // send active server ip request
+    // make_ip_req(net_socket.sockfd, &connection_message, &err);
     // if(err != 0)
     // {
     //     goto cleanup;
     // }
-
-    // res = display_menu();
-    // if(terminate)
+    // // TODO: uncomment this when sm is done
+    // if(connection_message.server_online == 0)
     // {
+    //     printf("No active server.\n");
     //     goto cleanup;
     // }
 
-    // res = login_or_create(request_header, net_socket.sockfd, res, &err);
-    // if(res == -1)
-    // {
-    //     printf("error opening form\n");
-    //     goto cleanup;
-    // }
-    // if(terminate)
-    // {    // SIGINT received in login or account creation page
-    //     goto cleanup;
-    // }
+    // close(net_socket.sockfd);
+    // end connection with sm
+
+    // TODO: must connect to server ip and port provided from sm
+    // net_socket.address = (char *)connection_message.active_server_ip;    // uncomment this line
+    // net_socket.port    = (char *)connection_message.active_server_port;
+
+    // net_socket.address = strdup("127.0.0.2");    // TODO: change this to appropriate server ip
+    // net_socket.port = SM_PORT;
+
+    // socket initialization (server)
+    setup_socket(&net_socket, &err);
+    if(err != 0)
+    {
+        goto cleanup;
+    }
+
+    setup_signal(sigint_handler, SIGINT, &err);
+    if(err != 0)
+    {
+        goto cleanup;
+    }
+
+    res = display_menu();
+    if(terminate)
+    {
+        goto cleanup;
+    }
+
+    res = login_or_create(request_header, net_socket.sockfd, res, &err);
+    if(res == -1)
+    {
+        printf("error opening form\n");
+        goto cleanup;
+    }
+    if(terminate)
+    {    // SIGINT received in login or account creation page
+        goto cleanup;
+    }
 
     printf("client ran successfully\n");
 cleanup:

@@ -4,11 +4,15 @@ void handle_arguments(int argc, char *argv[], struct socket_network *net_socket,
 {
     int option;
     net_socket->address = NULL;
-    while((option = getopt(argc, argv, "h:")) != -1)
+    while((option = getopt(argc, argv, "h:p:")) != -1)
     {
         if(option == 'h')
         {
             net_socket->address = optarg;
+        }
+        else if(option == 'p')
+        {
+            net_socket->port = optarg;
         }
         else
         {
@@ -16,7 +20,7 @@ void handle_arguments(int argc, char *argv[], struct socket_network *net_socket,
             *err = 1;
         }
     }
-    if(net_socket->address == NULL)
+    if(net_socket->address == NULL || net_socket->port == NULL)
     {
         perror("Error unable to parse ip");
         *err = 1;
@@ -59,7 +63,7 @@ void setup_network_address(struct socket_network *net_socket, int *err)
 
         net_socket->addr.ss_family = AF_INET;
         ipv4_addr                  = (struct sockaddr_in *)(&(net_socket->addr));
-        ipv4_addr->sin_port        = htons(net_socket->port);
+        ipv4_addr->sin_port        = htons((uint16_t)strtoul(net_socket->port, NULL, BASE));
         net_socket->addr_len       = sizeof(*ipv4_addr);
     }
     else if(inet_pton(AF_INET6, net_socket->address, &(((struct sockaddr_in6 *)(&(net_socket->addr)))->sin6_addr)) == 1)
@@ -68,7 +72,7 @@ void setup_network_address(struct socket_network *net_socket, int *err)
 
         net_socket->addr.ss_family = AF_INET6;
         ipv6_addr                  = (struct sockaddr_in6 *)(&(net_socket->addr));
-        ipv6_addr->sin6_port       = htons(net_socket->port);
+        ipv6_addr->sin6_port       = htons((uint16_t)strtoul(net_socket->port, NULL, BASE));
         net_socket->addr_len       = sizeof(*ipv6_addr);
     }
     else
