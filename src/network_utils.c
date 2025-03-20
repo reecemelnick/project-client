@@ -82,6 +82,7 @@ void socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addr_len,
 {
     if(connect(sockfd, addr, addr_len) != 0)
     {
+        close(sockfd);
         perror("Error while connecting socket");
         *err = errno;
     }
