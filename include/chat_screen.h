@@ -8,8 +8,10 @@
 typedef struct Node
 {
     // message data
+        // cppcheck-suppress unusedStructMember
     char *data;
     // next message in list
+        // cppcheck-suppress unusedStructMember
     struct Node *next;
 
 } Node;
