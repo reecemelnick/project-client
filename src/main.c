@@ -59,12 +59,12 @@ void make_ip_req(const int server_manager_fd, struct ConnectionMessage *connecti
         printf("\nserver ip length: %zu\n", len);
         send_packet_t(connection_message->active_server_ip, len);
 
-        port_index = ip_index + len + 1;    // retrieves the server port index
+        port_index = ip_index + len + 1 + 1;    // retrieves the server port index
         len        = (size_t)incoming_stream[port_index - 1];
+        printf("\nserver port length: %zu\n", len);
         parse_and_extract_message(incoming_stream, connection_message->active_server_port, port_index, len);
         // connection_message->active_server_port = active_server_port;
         // prints server ip
-        printf("\nserver port length: %zu\n", len);
         send_packet_t(connection_message->active_server_port, len);
     }
     free(incoming_stream);
@@ -76,12 +76,12 @@ void make_ip_req(const int server_manager_fd, struct ConnectionMessage *connecti
 int main(int argc, char *argv[])
 {
     struct socket_network net_socket;    // network socket info
-    int                   res;
-    struct Message        request_header = {0};    // struct to form request header
-    // struct ConnectionMessage connection_message = {0};
-    int err = 0;
-    // net_socket.port                             = SM_PORT;
-    net_socket.port = SERVER_PORT;
+    // int                   res;
+    // struct Message        request_header = {0};    // struct to form request header
+    struct ConnectionMessage connection_message = {0};
+    int                      err                = 0;
+    net_socket.port                             = SM_PORT;
+    // net_socket.port = SERVER_PORT;
 
     // connection_message.active_server_ip = NULL;
 
@@ -92,27 +92,27 @@ int main(int argc, char *argv[])
     }
 
     // socket initialization (sm)
-    // setup_socket(&net_socket, &err);
-    // if(err != 0)
-    // {
-    //     goto cleanup;
-    // }
+    setup_socket(&net_socket, &err);
+    if(err != 0)
+    {
+        goto cleanup;
+    }
 
-    // // client-sm communication
-    // net_socket.address = NULL;    // set to null, unneeded
+    // client-sm communication
+    net_socket.address = NULL;    // set to null, unneeded
 
-    // // send active server ip request
-    // make_ip_req(net_socket.sockfd, &connection_message, &err);
-    // if(err != 0)
-    // {
-    //     goto cleanup;
-    // }
-    // // TODO: uncomment this when sm is done
-    // // if(connection_message.server_online == 0)
-    // // {
-    // //     printf("No active server.\n");
-    // //     goto cleanup;
-    // // }
+    // send active server ip request
+    make_ip_req(net_socket.sockfd, &connection_message, &err);
+    if(err != 0)
+    {
+        goto cleanup;
+    }
+    // TODO: uncomment this when sm is done
+    if(connection_message.server_online == 0)
+    {
+        printf("No active server.\n");
+        goto cleanup;
+    }
 
     // close(net_socket.sockfd);
     // end connection with sm
@@ -125,34 +125,34 @@ int main(int argc, char *argv[])
     // net_socket.port    = SERVER_PORT;
 
     // socket initialization (server)
-    setup_socket(&net_socket, &err);
-    if(err != 0)
-    {
-        goto cleanup;
-    }
+    // setup_socket(&net_socket, &err);
+    // if(err != 0)
+    // {
+    //     goto cleanup;
+    // }
 
-    setup_signal(sigint_handler, SIGINT, &err);
-    if(err != 0)
-    {
-        goto cleanup;
-    }
+    // setup_signal(sigint_handler, SIGINT, &err);
+    // if(err != 0)
+    // {
+    //     goto cleanup;
+    // }
 
-    res = display_menu();
-    if(terminate)
-    {
-        goto cleanup;
-    }
+    // res = display_menu();
+    // if(terminate)
+    // {
+    //     goto cleanup;
+    // }
 
-    res = login_or_create(request_header, net_socket.sockfd, res, &err);
-    if(res == -1)
-    {
-        printf("error opening form\n");
-        goto cleanup;
-    }
-    if(terminate)
-    {    // SIGINT received in login or account creation page
-        goto cleanup;
-    }
+    // res = login_or_create(request_header, net_socket.sockfd, res, &err);
+    // if(res == -1)
+    // {
+    //     printf("error opening form\n");
+    //     goto cleanup;
+    // }
+    // if(terminate)
+    // {    // SIGINT received in login or account creation page
+    //     goto cleanup;
+    // }
 
     printf("client ran successfully\n");
 cleanup:
