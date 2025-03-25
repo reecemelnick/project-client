@@ -59,12 +59,12 @@ void make_ip_req(const int server_manager_fd, struct ConnectionMessage *connecti
         printf("\nserver ip length: %zu\n", len);
         send_packet_t(connection_message->active_server_ip, len);
 
-        port_index = ip_index + len + 1 + 1;    // retrieves the server port index
+        port_index = ip_index + len + 1;    // retrieves the server port index
         len        = (size_t)incoming_stream[port_index];
-        printf("\nserver port length: %zu\n", len);
         parse_and_extract_message(incoming_stream, connection_message->active_server_port, port_index, len);
         // connection_message->active_server_port = active_server_port;
         // prints server ip
+        printf("\nserver port length: %zu\n", len);
         send_packet_t(connection_message->active_server_port, len);
     }
     free(incoming_stream);
