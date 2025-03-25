@@ -60,7 +60,7 @@ void make_ip_req(const int server_manager_fd, struct ConnectionMessage *connecti
         send_packet_t(connection_message->active_server_ip, len);
 
         port_index = ip_index + len + 1 + 1;    // retrieves the server port index
-        len        = (size_t)incoming_stream[port_index - 1];
+        len        = (size_t)incoming_stream[port_index];
         printf("\nserver port length: %zu\n", len);
         parse_and_extract_message(incoming_stream, connection_message->active_server_port, port_index, len);
         // connection_message->active_server_port = active_server_port;
@@ -75,11 +75,11 @@ void make_ip_req(const int server_manager_fd, struct ConnectionMessage *connecti
 */
 int main(int argc, char *argv[])
 {
-    struct socket_network net_socket;    // network socket info
-    int                   res;
-    struct Message        request_header = {0};    // struct to form request header
-    // struct ConnectionMessage connection_message = {0};
-    int err = 0;
+    struct socket_network    net_socket;    // network socket info
+    int                      res;
+    struct Message           request_header     = {0};    // struct to form request header
+    struct ConnectionMessage connection_message = {0};
+    int                      err                = 0;
     // net_socket.port                             = SM_PORT;
     // net_socket.port = SERVER_PORT;
 
@@ -92,34 +92,34 @@ int main(int argc, char *argv[])
     }
 
     // socket initialization (sm)
-    // setup_socket(&net_socket, &err);
-    // if(err != 0)
-    // {
-    //     goto cleanup;
-    // }
+    setup_socket(&net_socket, &err);
+    if(err != 0)
+    {
+        goto cleanup;
+    }
 
-    // // client-sm communication
-    // net_socket.address = NULL;    // set to null, unneeded
+    // client-sm communication
+    net_socket.address = NULL;    // set to null, unneeded
 
-    // // send active server ip request
-    // make_ip_req(net_socket.sockfd, &connection_message, &err);
-    // if(err != 0)
-    // {
-    //     goto cleanup;
-    // }
-    // // TODO: uncomment this when sm is done
-    // if(connection_message.server_online == 0)
-    // {
-    //     printf("No active server.\n");
-    //     goto cleanup;
-    // }
+    // send active server ip request
+    make_ip_req(net_socket.sockfd, &connection_message, &err);
+    if(err != 0)
+    {
+        goto cleanup;
+    }
+    // TODO: uncomment this when sm is done
+    if(connection_message.server_online == 0)
+    {
+        printf("No active server.\n");
+        goto cleanup;
+    }
 
-    // close(net_socket.sockfd);
+    close(net_socket.sockfd);
     // end connection with sm
 
     // TODO: must connect to server ip and port provided from sm
-    // net_socket.address = (char *)connection_message.active_server_ip;    // uncomment this line
-    // net_socket.port    = (char *)connection_message.active_server_port;
+    net_socket.address = (char *)connection_message.active_server_ip;    // uncomment this line
+    net_socket.port    = (char *)connection_message.active_server_port;
 
     // net_socket.address = strdup("127.0.0.2");    // TODO: change this to appropriate server ip
     // net_socket.port = SM_PORT;
