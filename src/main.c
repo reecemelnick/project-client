@@ -61,7 +61,7 @@ void make_ip_req(const int server_manager_fd, struct ConnectionMessage *connecti
 
         port_index = ip_index + len + 1;    // retrieves the server port index
         len        = (size_t)incoming_stream[port_index];
-        parse_and_extract_message(incoming_stream, connection_message->active_server_port, port_index, len);
+        parse_and_extract_message(incoming_stream, connection_message->active_server_port, port_index + 1, len);
         // connection_message->active_server_port = active_server_port;
         // prints server ip
         printf("\nserver port length: %zu\n", len);
