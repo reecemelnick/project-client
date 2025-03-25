@@ -408,8 +408,8 @@ void chat_input(WINDOW *win, const uint16_t user_id, uint8_t *username, int sock
                 pthread_mutex_unlock(get_ncurses_mutex());
             }
         }
-        // on enter pressed
-        else if(ch == '\n')
+        // on enter pressed and message is not empty
+        else if(ch == '\n' && i > 0)
         {
             message_text[i] = '\0';
 
