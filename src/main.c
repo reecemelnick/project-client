@@ -71,7 +71,10 @@ void make_ip_req(const int server_manager_fd, struct ConnectionMessage *connecti
 }
 
 /*
+    SM MUST BE UP AND RUNNING
+
     -h server manager ip
+    -p server manager port
 */
 int main(int argc, char *argv[])
 {
