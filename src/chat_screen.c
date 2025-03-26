@@ -236,6 +236,13 @@ _Noreturn void *chat_log_thread(void *arg)
             continue;
         }
 
+        // check if server closed connection
+        if(fds[0].revents & POLLHUP)
+        {
+            terminate = 1;
+            break;
+        }
+
         if(fds[0].revents & POLLIN)
         {
             ssize_t read_bytes;    // number of bytes read

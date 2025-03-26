@@ -128,6 +128,12 @@ void read_entire_stream(const int serverfd, uint8_t **bytestream, size_t *size, 
             break;
         }
 
+        // check if server closed connection
+        if(pfd.revents & POLLHUP)
+        {
+            break;
+        }
+
         if(pfd.revents & POLLIN)
         {
             bytes_read = read(serverfd, buffer, PACKETLEN);
