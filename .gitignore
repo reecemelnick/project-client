@@ -482,3 +482,5 @@ build/
 
 test_broadcast.c
 test_send_chat.c
+
+.vscode/
