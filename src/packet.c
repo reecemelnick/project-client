@@ -16,6 +16,7 @@
 #define CONNECTION_MSG_LEN 2
 #define TIMEOUT 100000
 #define IDINDEX_LOGIN 8
+#define TIMESTAMP_SIZE 17
 
 // #define PAYLOADINDEX 6
 // #define LENGTHINDEX 4
@@ -371,12 +372,12 @@ void build_chat_struct(struct CHT_Send *new_chat, struct Message *chat_header, c
     size_t  username_len = strlen((const char *)username);
 
     // HARDCODED: need to change
-    uint8_t timestamp[]   = {0x32, 0x30, 0x32, 0x35, 0x30, 0x33, 0x30, 0x34, 0x30, 0x33, 0x30, 0x39, 0x30, 0x36, 0x5a};    // NOLINT
-    size_t  timestamp_len = sizeof(timestamp);
+    // uint8_t timestamp[]   = {0x32, 0x30, 0x32, 0x35, 0x30, 0x33, 0x30, 0x34, 0x30, 0x33, 0x30, 0x39, 0x30, 0x36, 0x5a};    // NOLINT
+    // size_t  timestamp_len = sizeof(timestamp);
 
-    // size_t  timestamp_len             = TIMESTAMP_SIZE;
-    // uint8_t timestamp[TIMESTAMP_SIZE] = {0};
-    // get_generalized_time(&timestamp, TIMESTAMP_SIZE);
+    size_t  timestamp_len             = TIMESTAMP_SIZE;
+    uint8_t timestamp[TIMESTAMP_SIZE] = {0};
+    get_generalized_time(timestamp, TIMESTAMP_SIZE);
 
     // populate packet header
     chat_header->packet_type = CHT_Send;
@@ -582,4 +583,14 @@ void send_and_serialize_message(int server_fd, const struct Message *message)
 
     send_packet(server_fd, buffer, packet_size);
     printf("testing\n");
+}
+
+void get_generalized_time(uint8_t *buffer, size_t size)
+{
+    time_t           raw_time;
+    const struct tm *time_info;
+    struct tm        mytime;
+    time(&raw_time);
+    time_info = gmtime_r(&raw_time, &mytime);
+    strftime((char *)buffer, size, "%Y%m%d%H%M%SZ", time_info);
 }

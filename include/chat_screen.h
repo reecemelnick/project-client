@@ -23,7 +23,7 @@ void  chat_input(WINDOW *win, uint16_t user_id, uint8_t *username, int sockfd);
 int   confirm_CHT_success(const uint8_t *byte_stream);
 void  generate_timestamp_byte_stream(uint8_t *byte_stream);
 void *chat_log_thread(void *arg);
-void  get_generalized_time(uint8_t *buffer, size_t size);
+// void  get_generalized_time(uint8_t *buffer, size_t size);
 void  make_chat_input_box(WINDOW **win, char *username, uint16_t user_id, int *cursor_pos);
 Node *add_message_to_LL(const uint8_t *message, const uint8_t *username);
 void  free_nodes(Node *head_node);
