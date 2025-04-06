@@ -22,3 +22,4 @@ void             make_logout_req(int server_fd, uint16_t sender_id);
 void             send_and_serialize_message(int server_fd, const struct Message *message);
 void             parse_connection_message_header(const uint8_t *byte_stream, struct ConnectionMessage *incoming_message);
 void             build_chat_struct(struct CHT_Send *new_chat, struct Message *chat_header, const uint8_t *message, const uint8_t *username, uint16_t id);
+void             get_generalized_time(uint8_t *buffer, size_t size);
