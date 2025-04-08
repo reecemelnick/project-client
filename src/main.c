@@ -9,7 +9,7 @@
 #include <ncurses.h>
 
 // Client-ServerManager functions
-void make_ip_req(int server_manager_fd, struct ConnectionMessage *connection_message, int *err);
+static void make_ip_req(int server_manager_fd, struct ConnectionMessage *connection_message, int *err);
 
 // end Client-ServerManager functions
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)

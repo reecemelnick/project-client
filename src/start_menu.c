@@ -5,7 +5,10 @@
 #define HEIGHT 10
 #define WIDTH 40
 
-void print_menu_options(WINDOW *menuWin, const int *highlight, const char **choices)
+static void print_menu_options(WINDOW *menuWin, const int *highlight, const char **choices);
+static void browse_options(const int *choice, int *highlight);
+
+static void print_menu_options(WINDOW *menuWin, const int *highlight, const char **choices)
 {
     for(int i = 0; i < 2; i++)
     {
@@ -18,7 +21,7 @@ void print_menu_options(WINDOW *menuWin, const int *highlight, const char **choi
     }
 }
 
-void browse_options(const int *choice, int *highlight)
+static void browse_options(const int *choice, int *highlight)
 {
     switch(*choice)
     {

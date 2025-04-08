@@ -9,8 +9,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+static void set_packet_type(int form_type, uint8_t *type);
+static int  handle_login_create_res(struct Message incoming_message, const uint8_t *incoming_stream, uint8_t *username, int sockfd);
+static void make_login_create_req(struct Message *header, struct ACC_Create_Login request, int form_type);
+
 // assign packet type depending on login or create
-void set_packet_type(int form_type, uint8_t *type)
+static void set_packet_type(int form_type, uint8_t *type)
 {
     if(form_type == 1)
     {
@@ -27,7 +31,7 @@ void set_packet_type(int form_type, uint8_t *type)
 }
 
 // handle login and create account response packet
-int handle_login_create_res(struct Message incoming_message, const uint8_t *incoming_stream, uint8_t *username, int sockfd)
+static int handle_login_create_res(struct Message incoming_message, const uint8_t *incoming_stream, uint8_t *username, int sockfd)
 {
     if(incoming_message.packet_type == SYS_Error)
     {
@@ -61,7 +65,7 @@ int handle_login_create_res(struct Message incoming_message, const uint8_t *inco
 }
 
 // prepare the request header for login and create request
-void make_login_create_req(struct Message *header, struct ACC_Create_Login request, int form_type)
+static void make_login_create_req(struct Message *header, struct ACC_Create_Login request, int form_type)
 {
     uint8_t  type;
     uint8_t  version;

@@ -21,6 +21,13 @@
 // #define PAYLOADINDEX 6
 // #define LENGTHINDEX 4
 
+static void     send_packet(int serverfd, const uint8_t *buffer, size_t size);
+static uint16_t extract_next_twobytes(const uint8_t *byte_stream, size_t *position);
+static int      set_fd_non_blocking(int fd);
+static uint8_t *construct_cht_payload(struct CHT_Send *cht_packet);
+static void     send_and_serialize_message(int server_fd, const struct Message *message);
+static void     get_generalized_time(uint8_t *buffer, size_t size);
+
 // populates all the fields of a Message struct
 void construct_message(struct Message *header, uint8_t type, uint8_t version, uint16_t id, uint16_t length)
 {
@@ -77,7 +84,7 @@ void send_and_serialize_ACC_Create_Login(int serverfd, const struct ACC_Create_L
 }
 
 // write the packet bytestream to the server
-void send_packet(const int serverfd, const uint8_t *buffer, const size_t size)
+static void send_packet(int serverfd, const uint8_t *buffer, size_t size)
 {
     if(write(serverfd, buffer, size) < 0)
     {
@@ -278,7 +285,7 @@ void parse_response_header(const uint8_t *byte_stream, struct Message *incoming_
     incoming_message->payload_len = payload_len;
 }
 
-uint16_t extract_next_twobytes(const uint8_t *byte_stream, size_t *position)
+static uint16_t extract_next_twobytes(const uint8_t *byte_stream, size_t *position)
 {
     uint16_t twobytes;
     memcpy(&twobytes, byte_stream + *position, sizeof(uint16_t));
@@ -287,7 +294,7 @@ uint16_t extract_next_twobytes(const uint8_t *byte_stream, size_t *position)
     return twobytes;
 }
 
-int set_fd_non_blocking(int fd)
+static int set_fd_non_blocking(int fd)
 {
     int flags = fcntl(fd, F_GETFL, 0);
     if(flags == -1)
@@ -525,7 +532,7 @@ void send_user_message(int fd, struct CHT_Send *cht_packet)
     send_packet(fd, buffer, buffer_size);
 }
 
-uint8_t *construct_cht_payload(struct CHT_Send *cht_packet)
+static uint8_t *construct_cht_payload(struct CHT_Send *cht_packet)
 {
     uint8_t *payload;
 
@@ -563,7 +570,7 @@ void make_logout_req(int server_fd, uint16_t sender_id)
     send_and_serialize_message(server_fd, &logout_message);
 }
 
-void send_and_serialize_message(int server_fd, const struct Message *message)
+static void send_and_serialize_message(int server_fd, const struct Message *message)
 {
     size_t   packet_size;
     uint8_t  buffer[PACKETLEN];
@@ -591,7 +598,7 @@ void send_and_serialize_message(int server_fd, const struct Message *message)
     printf("testing\n");
 }
 
-void get_generalized_time(uint8_t *buffer, size_t size)
+static void get_generalized_time(uint8_t *buffer, size_t size)
 {
     time_t           raw_time;
     const struct tm *time_info;

@@ -1,5 +1,9 @@
 #include "../include/network_utils.h"
 
+static void socket_create(struct socket_network *net_socket, int *err);
+static void setup_network_address(struct socket_network *net_socket, int *err);
+static void socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addr_len, int *err);
+
 void handle_arguments(int argc, char *argv[], struct socket_network *net_socket, int *err)
 {
     int option;
@@ -27,7 +31,7 @@ void handle_arguments(int argc, char *argv[], struct socket_network *net_socket,
     }
 }
 
-void socket_create(struct socket_network *net_socket, int *err)
+static void socket_create(struct socket_network *net_socket, int *err)
 {
     net_socket->sockfd = socket(AF_INET, SOCK_STREAM, 0);    // NOLINT
     if(net_socket->sockfd == -1)
@@ -53,7 +57,7 @@ void socket_create(struct socket_network *net_socket, int *err)
 //     }
 // }
 
-void setup_network_address(struct socket_network *net_socket, int *err)
+static void setup_network_address(struct socket_network *net_socket, int *err)
 {
     memset(&(net_socket->addr), 0, sizeof((net_socket->addr)));
 
@@ -82,7 +86,7 @@ void setup_network_address(struct socket_network *net_socket, int *err)
     }
 }
 
-void socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addr_len, int *err)
+static void socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addr_len, int *err)
 {
     if(connect(sockfd, addr, addr_len) != 0)
     {

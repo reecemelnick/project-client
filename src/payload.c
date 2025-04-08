@@ -1,6 +1,8 @@
 #include "../include/payload.h"
 
-void string_to_bytes(const char *str, uint8_t **message_str, size_t len, int *err)
+static void string_to_bytes(const char *str, uint8_t **message_str, size_t len, int *err);
+
+static void string_to_bytes(const char *str, uint8_t **message_str, size_t len, int *err)
 {
     // used to store byte stream of str
     if(str == NULL)

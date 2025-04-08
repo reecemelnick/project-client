@@ -27,10 +27,25 @@ struct thread_args
     int fd;
 };
 
+static Node            *add_message_to_LL(const uint8_t *message, const uint8_t *username);
+static Node            *allocate_node_data(size_t total_len);
+static void             build_node_data(Node *new_node, const uint8_t *message, const uint8_t *username, size_t message_len, size_t username_len);
+static Node            *shift_nodes(Node *head);
+static void             clear_text_window(WINDOW *win);
+static void             free_nodes(Node *head_node);
+static Node            *initialize_head_node(void);
+static void             free_CHT_SEND(struct CHT_Send *chat_message);
+static _Noreturn void  *chat_log_thread(void *arg);
+static void             chat_input(WINDOW *win, uint16_t user_id, uint8_t *username, int sockfd);
+static void             cleanup_input_chat(struct CHT_Send new_chat);
+static int              confirm_CHT_success(const uint8_t *byte_stream);
+static void             users_box(WINDOW *usersWin, uint8_t *username);
+static void             make_chat_input_box(WINDOW **win, char *username, uint16_t user_id, int *cursor_pos);
+static void             chat_log_box(WINDOW **win, WINDOW **inner);
 static pthread_mutex_t *get_ncurses_mutex(void);
 
 // add a node representing a message to linked list
-Node *add_message_to_LL(const uint8_t *message, const uint8_t *username)
+static Node *add_message_to_LL(const uint8_t *message, const uint8_t *username)
 {
     size_t message_len;
     size_t username_len;
@@ -60,7 +75,7 @@ Node *add_message_to_LL(const uint8_t *message, const uint8_t *username)
 }
 
 // allocate space for node structure and node data
-Node *allocate_node_data(size_t total_len)
+static Node *allocate_node_data(size_t total_len)
 {
     Node *new_node = (Node *)malloc(sizeof(Node));
     if(!new_node)
@@ -79,7 +94,7 @@ Node *allocate_node_data(size_t total_len)
 }
 
 // copy and format username and message into node data
-void build_node_data(Node *new_node, const uint8_t *message, const uint8_t *username, size_t message_len, size_t username_len)
+static void build_node_data(Node *new_node, const uint8_t *message, const uint8_t *username, size_t message_len, size_t username_len)
 {
     size_t pos;
 
@@ -97,7 +112,7 @@ void build_node_data(Node *new_node, const uint8_t *message, const uint8_t *user
 }
 
 // once chat display is full, remove the head, return new head
-Node *shift_nodes(Node *head)
+static Node *shift_nodes(Node *head)
 {
     Node *temp;
 
@@ -115,7 +130,7 @@ Node *shift_nodes(Node *head)
 }
 
 // clear the text window completly
-void clear_text_window(WINDOW *win)
+static void clear_text_window(WINDOW *win)
 {
     if(win)
     {
@@ -125,7 +140,7 @@ void clear_text_window(WINDOW *win)
 }
 
 // iterate over linked list and print all messages to screen
-void show_messages(WINDOW *win, Node *head)
+static void show_messages(WINDOW *win, Node *head)
 {
     Node *itr;
     int   print_line;
@@ -143,7 +158,7 @@ void show_messages(WINDOW *win, Node *head)
 }
 
 // free all message nodes and node data
-void free_nodes(Node *head_node)
+static void free_nodes(Node *head_node)
 {
     Node *cur;
     Node *next;
@@ -160,7 +175,7 @@ void free_nodes(Node *head_node)
 }
 
 // make dataless head inital head node
-Node *initialize_head_node(void)
+static Node *initialize_head_node(void)
 {
     Node *head_node;
 
@@ -177,7 +192,7 @@ Node *initialize_head_node(void)
 }
 
 // cleaup all fields of CHT_Send struct
-void free_CHT_SEND(struct CHT_Send *chat_message)
+static void free_CHT_SEND(struct CHT_Send *chat_message)
 {
     free(chat_message->content);
     free(chat_message->timestamp);
@@ -194,7 +209,7 @@ static pthread_mutex_t *get_ncurses_mutex(void)
 }
 
 // CHAT LOG PARSE AND DISPLAY LOOP. Thread funciton that polls server for messages
-_Noreturn void *chat_log_thread(void *arg)
+static _Noreturn void *chat_log_thread(void *arg)
 {
     int                       status;                     // status of recived message. (check that its CHT_SEND)
     int                       current_line_of_message;    // stores the current line to print message to
@@ -365,7 +380,7 @@ int start_chat_screen(const uint16_t user_id, uint8_t *username, int sockfd)
     return 0;
 }
 
-void chat_input(WINDOW *win, const uint16_t user_id, uint8_t *username, int sockfd)
+static void chat_input(WINDOW *win, uint16_t user_id, uint8_t *username, int sockfd)
 {
     char            message_text[INPUT_BUFFER_SIZE] = {0};
     int             i;
@@ -445,7 +460,7 @@ void chat_input(WINDOW *win, const uint16_t user_id, uint8_t *username, int sock
 }
 
 // cleanup chat message input sent to server
-void cleanup_input_chat(struct CHT_Send new_chat)
+static void cleanup_input_chat(struct CHT_Send new_chat)
 {
     free(new_chat.timestamp);
     free(new_chat.content);
@@ -455,7 +470,7 @@ void cleanup_input_chat(struct CHT_Send new_chat)
 }
 
 // confirm that a broadcast was received
-int confirm_CHT_success(const uint8_t *byte_stream)
+static int confirm_CHT_success(const uint8_t *byte_stream)
 {
     if(byte_stream[0] != CHT_Send)
     {
@@ -466,7 +481,7 @@ int confirm_CHT_success(const uint8_t *byte_stream)
 }
 
 // make users box
-void users_box(WINDOW *usersWin, uint8_t *username)
+static void users_box(WINDOW *usersWin, uint8_t *username)
 {
     int height;
     int width;
@@ -488,7 +503,7 @@ void users_box(WINDOW *usersWin, uint8_t *username)
 }
 
 // make chat input box
-void make_chat_input_box(WINDOW **win, char *username, uint16_t user_id, int *cursor_pos)
+static void make_chat_input_box(WINDOW **win, char *username, uint16_t user_id, int *cursor_pos)
 {
     int height;
     int width;
@@ -514,7 +529,7 @@ void make_chat_input_box(WINDOW **win, char *username, uint16_t user_id, int *cu
 }
 
 // make chat log box
-void chat_log_box(WINDOW **win, WINDOW **inner)
+static void chat_log_box(WINDOW **win, WINDOW **inner)
 {
     int height;
     int width;

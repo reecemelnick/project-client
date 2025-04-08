@@ -32,13 +32,7 @@ struct socket_network
 
 void handle_arguments(int argc, char *argv[], struct socket_network *net_socket, int *err);
 
-void socket_create(struct socket_network *net_socket, int *err);
-
 // void socket_set_non_blocking(struct socket_network *net_socket, int *err);
-
-void setup_network_address(struct socket_network *net_socket, int *err);
-
-void socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addr_len, int *err);
 
 void socket_close(int sockfd);
 
