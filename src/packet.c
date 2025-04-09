@@ -130,10 +130,10 @@ void read_entire_stream(const int serverfd, uint8_t **bytestream, size_t *size, 
         }
 
         // check if server closed connection
-        if(pfd.revents & POLLHUP)
-        {
-            break;
-        }
+        // if(pfd.revents & POLLHUP)
+        // {
+        //     break;
+        // }
 
         if(pfd.revents & POLLIN)
         {
